@@ -1,0 +1,187 @@
+{% load static %} 
+<div class="ui-theme-settings">
+    <button type="button" id="TooltipDemo" class="btn-open-options btn btn-warning">
+        <i class="fa fa-cog fa-w-16 fa-spin fa-2x"></i>
+    </button>
+    <div class="theme-settings__inner">
+        <div class="scrollbar-container">
+            <div class="theme-settings__options-wrapper">
+                
+                <!-- Layout Options Section -->
+                <h3 class="themeoptions-heading">Layout Options</h3>
+                <div class="p-3">
+                    <ul class="list-group">
+                        <!-- Fixed Header Toggle -->
+                        <li class="list-group-item">
+                            <div class="widget-content p-0">
+                                <div class="widget-content-wrapper">
+                                    <div class="widget-content-left me-3">
+                                        <div class="switch has-switch switch-container-class" data-class="fixed-header">
+                                            <div class="switch-animate {% if fixed_header %}switch-on{% else %}switch-off{% endif %}">
+                                                <input type="checkbox" {% if fixed_header %}checked{% endif %} data-toggle="toggle" data-onstyle="success">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="widget-content-left">
+                                        <div class="widget-heading">Fixed Header</div>
+                                        <div class="widget-subheading">Makes the header top fixed, always visible!</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <!-- Fixed Sidebar Toggle -->
+                        <li class="list-group-item">
+                            <div class="widget-content p-0">
+                                <div class="widget-content-wrapper">
+                                    <div class="widget-content-left me-3">
+                                        <div class="switch has-switch switch-container-class" data-class="fixed-sidebar">
+                                            <div class="switch-animate {% if fixed_sidebar %}switch-on{% else %}switch-off{% endif %}">
+                                                <input type="checkbox" {% if fixed_sidebar %}checked{% endif %} data-toggle="toggle" data-onstyle="success">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="widget-content-left">
+                                        <div class="widget-heading">Fixed Sidebar</div>
+                                        <div class="widget-subheading">Makes the sidebar left fixed, always visible!</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <!-- Fixed Footer Toggle -->
+                        <li class="list-group-item">
+                            <div class="widget-content p-0">
+                                <div class="widget-content-wrapper">
+                                    <div class="widget-content-left me-3">
+                                        <div class="switch has-switch switch-container-class" data-class="fixed-footer">
+                                            <div class="switch-animate {% if fixed_footer %}switch-on{% else %}switch-off{% endif %}">
+                                                <input type="checkbox" {% if fixed_footer %}checked{% endif %} data-toggle="toggle" data-onstyle="success">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="widget-content-left">
+                                        <div class="widget-heading">Fixed Footer</div>
+                                        <div class="widget-subheading">Makes the app footer bottom fixed, always visible!</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Header Options Section -->
+                <h3 class="themeoptions-heading">
+                    <div>Header Options</div>
+                    <button type="button" class="btn-pill btn-shadow btn-wide ms-auto btn btn-focus btn-sm switch-header-cs-class" data-class="">
+                        Restore Default
+                    </button>
+                </h3>
+                <div class="p-3">
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <h5 class="pb-2">Choose Color Scheme</h5>
+                            <div class="theme-settings-swatches">
+                                <!-- Basic Colors -->
+                                {% for color in basic_colors %}
+                                <div class="swatch-holder {{ color.bg_class }} switch-header-cs-class" 
+                                     data-class="{{ color.full_class }}" 
+                                     title="{{ color.label }}">
+                                </div>
+                                {% endfor %}
+
+                                <div class="divider"></div>
+
+                                <!-- Gradient Colors -->
+                                {% for color in gradient_colors %}
+                                <div class="swatch-holder {{ color.bg_class }} switch-header-cs-class" 
+                                     data-class="{{ color.full_class }}" 
+                                     title="{{ color.label }}">
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Sidebar Options Section -->
+                <h3 class="themeoptions-heading">
+                    <div>Sidebar Options</div>
+                    <button type="button" class="btn-pill btn-shadow btn-wide ms-auto btn btn-focus btn-sm switch-sidebar-cs-class" data-class="">
+                        Restore Default
+                    </button>
+                </h3>
+                <div class="p-3">
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <h5 class="pb-2">Choose Color Scheme</h5>
+                            <div class="theme-settings-swatches">
+                                <!-- Basic Colors for Sidebar -->
+                                {% for color in basic_colors %}
+                                <div class="swatch-holder {{ color.bg_class }} switch-sidebar-cs-class" 
+                                     data-class="bg-{{ color.key }} sidebar-text-{{ color.text_class }}" 
+                                     title="{{ color.label }}">
+                                </div>
+                                {% endfor %}
+
+                                <div class="divider"></div>
+
+                                <!-- Gradient Colors for Sidebar -->
+                                {% for color in gradient_colors %}
+                                <div class="swatch-holder {{ color.bg_class }} switch-sidebar-cs-class" 
+                                     data-class="bg-{{ color.key }} sidebar-text-{{ color.text_class }}" 
+                                     title="{{ color.label }}">
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Main Content Options Section -->
+                <h3 class="themeoptions-heading">
+                    <div>Main Content Options</div>
+                    <button type="button" class="btn-pill btn-shadow btn-wide ms-auto btn btn-focus btn-sm" id="restoreMainDefaults">
+                        Restore Default
+                    </button>
+                </h3>
+                <div class="p-3">
+                    <ul class="list-group">
+                        <!-- Page Section Tabs Style -->
+                        <li class="list-group-item">
+                            <h5 class="pb-2">Page Section Tabs</h5>
+                            <div class="theme-settings-swatches">
+                                <div role="group" class="mt-2 btn-group">
+                                    {% for tab_option in tab_style_options %}
+                                    <button type="button" 
+                                            class="btn-wide btn-shadow btn-primary btn btn-secondary switch-theme-class {% if tab_option.active %}active{% endif %}" 
+                                            data-class="{{ tab_option.value }}">
+                                        {{ tab_option.label }}
+                                    </button>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </li>
+
+                        <!-- Light Color Schemes -->
+                        <li class="list-group-item">
+                            <h5 class="pb-2">Light Color Schemes</h5>
+                            <div class="theme-settings-swatches">
+                                <div role="group" class="mt-2 btn-group">
+                                    {% for theme in theme_options %}
+                                    <button type="button" 
+                                            class="btn-wide btn-shadow btn-primary btn btn-secondary switch-theme-class {% if theme.active %}active{% endif %}" 
+                                            data-class="{{ theme.value }}">
+                                        {{ theme.label }}
+                                    </button>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
