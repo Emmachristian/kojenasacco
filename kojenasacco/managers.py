@@ -1,0 +1,196 @@
+# managers.py
+
+from django.db import models, connections, router
+from django.conf import settings
+from threading import local
+import logging
+
+logger = logging.getLogger(__name__)
+
+_thread_locals = local()
+
+
+def get_current_db():
+    """Get the current database name for this thread"""
+    return getattr(_thread_locals, 'current_db', None)
+
+
+def set_current_db(db):
+    """Set the current database name for this thread"""
+    if not db:
+        return False
+    
+    if db not in settings.DATABASES:
+        logger.warning(f"Database '{db}' not found in settings")
+        return False
+    
+    _thread_locals.current_db = db
+    logger.debug(f"Set current_db to: {db}")
+    return True
+
+
+def clear_current_db():
+    """Clear the current database setting"""
+    if hasattr(_thread_locals, 'current_db'):
+        delattr(_thread_locals, 'current_db')
+
+
+class DatabaseContext:
+    """Context manager for temporarily switching databases"""
+    
+    def __init__(self, db_name):
+        self.db_name = db_name
+        self.previous_db = None
+    
+    def __enter__(self):
+        self.previous_db = get_current_db()
+        set_current_db(self.db_name)
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.previous_db:
+            set_current_db(self.previous_db)
+        else:
+            clear_current_db()
+
+
+class SaccoManager(models.Manager):
+    """Manager that automatically uses the current SACCO database"""
+    
+    def get_queryset(self):
+        current_db = get_current_db()
+        
+        if not current_db or current_db == 'default':
+            return super().get_queryset()
+        
+        if current_db not in connections:
+            logger.error(f"Invalid database '{current_db}'")
+            return super().get_queryset()
+        
+        return super().get_queryset().using(current_db)
+    
+    # Override all creation methods to use current database
+    def create(self, **kwargs):
+        return self.get_queryset().create(**kwargs)
+    
+    def bulk_create(self, objs, **kwargs):
+        return self.get_queryset().bulk_create(objs, **kwargs)
+    
+    def get_or_create(self, **kwargs):
+        return self.get_queryset().get_or_create(**kwargs)
+    
+    def update_or_create(self, **kwargs):
+        return self.get_queryset().update_or_create(**kwargs)
+
+
+# Note: Base model implementations are in utils/models.py
+# - BaseModel: For SACCO-specific models (auto-routes to current DB)
+# - DefaultDatabaseModel: For system-wide models (always uses default DB)
+
+# ==============================================================================
+# STANDALONE MANAGERS (if you don't want to change base class)
+# ==============================================================================
+
+class DefaultDatabaseManager(models.Manager):
+    """Manager that ALWAYS uses default database"""
+    
+    def get_queryset(self):
+        return super().get_queryset().using('default')
+    
+    def create(self, **kwargs):
+        return self.get_queryset().create(**kwargs)
+    
+    def bulk_create(self, objs, **kwargs):
+        return self.get_queryset().bulk_create(objs, **kwargs)
+    
+    def get_or_create(self, **kwargs):
+        return self.get_queryset().get_or_create(**kwargs)
+    
+    def update_or_create(self, **kwargs):
+        return self.get_queryset().update_or_create(**kwargs)
+
+
+# ==============================================================================
+# UTILITY FUNCTIONS
+# ==============================================================================
+
+def with_database(db_name):
+    """
+    Decorator to execute a function with a specific database context.
+    
+    Example:
+        @with_database('sacco_abc')
+        def get_members():
+            return list(Member.objects.all())
+    """
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            with DatabaseContext(db_name):
+                return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
+def execute_on_all_sacco_databases(func, *args, **kwargs):
+    """
+    Execute a function on all SACCO databases.
+    
+    Example:
+        def count_members():
+            return Member.objects.count()
+        
+        results = execute_on_all_sacco_databases(count_members)
+        # Returns: {'sacco_abc': 150, 'sacco_xyz': 200}
+    """
+    results = {}
+    sacco_dbs = [
+        db for db in settings.DATABASES.keys()
+        if db.startswith('sacco_')
+    ]
+    
+    for db in sacco_dbs:
+        try:
+            with DatabaseContext(db):
+                results[db] = func(*args, **kwargs)
+        except Exception as e:
+            logger.error(f"Error on database '{db}': {e}")
+            results[db] = None
+    
+    return results
+
+
+def get_all_sacco_databases():
+    """
+    Get list of all SACCO database names.
+    
+    Returns:
+        list: List of SACCO database names
+    """
+    return [
+        db for db in settings.DATABASES.keys()
+        if db.startswith('sacco_')
+    ]
+
+
+def validate_sacco_database(db_name):
+    """
+    Validate if a database name is a valid SACCO database.
+    
+    Args:
+        db_name: Database name to validate
+        
+    Returns:
+        bool: True if valid SACCO database, False otherwise
+    """
+    if not db_name or db_name == 'default':
+        return False
+    
+    if db_name not in settings.DATABASES:
+        logger.warning(f"Database '{db_name}' not found in settings")
+        return False
+    
+    if not db_name.startswith('sacco_'):
+        logger.warning(f"Database '{db_name}' is not a SACCO database")
+        return False
+    
+    return True
