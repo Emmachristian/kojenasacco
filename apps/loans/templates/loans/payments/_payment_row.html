@@ -1,0 +1,30 @@
+<!-- templates/loans/applications/_application_card.html --> 
+
+<tr id="payment-row-{{ payment.id }}" 
+    class="{% if payment.is_reversed %}table-secondary{% endif %}">
+    <td>{{ payment.payment_number }}</td>
+    <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+    <td>{{ payment.formatted_amount }}</td>
+    <td>
+        <span class="badge bg-{{ payment.method_badge_class }}">
+            {{ payment.get_payment_method_display }}
+        </span>
+    </td>
+    <td>
+        {% if payment.is_reversed %}
+        <span class="badge bg-secondary">Reversed</span>
+        {% else %}
+        <span class="badge bg-success">Active</span>
+        {% endif %}
+    </td>
+    <td>
+        {% if not payment.is_reversed %}
+        <button class="btn btn-sm btn-warning"
+                hx-get="{% url 'loans:payment_reverse_modal' payment.id %}"
+                hx-target="#modal-content"
+                hx-swap="innerHTML">
+            <i class="bi bi-arrow-counterclockwise"></i>
+        </button>
+        {% endif %}
+    </td>
+</tr>

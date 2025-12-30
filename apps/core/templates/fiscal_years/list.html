@@ -1,0 +1,551 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block extra_css %}
+<style>
+/* Reuse existing styles from your old template */
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid;
+    display: inline-block;
+}
+
+.status-badge.status-draft {
+    background-color: #e3f2fd;
+    color: #1976d2;
+    border-color: #bbdefb;
+}
+
+.status-badge.status-active {
+    background-color: #e8f5e9;
+    color: #388e3c;
+    border-color: #c8e6c9;
+}
+
+.status-badge.status-closed {
+    background-color: #fff3e0;
+    color: #f57c00;
+    border-color: #ffcc80;
+}
+
+.status-badge.status-locked {
+    background-color: #ffebee;
+    color: #d32f2f;
+    border-color: #ffcdd2;
+}
+
+/* HTMX transitions */
+.htmx-swapping {
+    opacity: 0;
+    transition: opacity 200ms ease-in;
+}
+
+.htmx-settling {
+    opacity: 1;
+    transition: opacity 200ms ease-out;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="app-page-title">
+    <div class="page-title-wrapper">
+        <div class="page-title-heading">
+            <div class="page-title-icon">
+                <i class="pe-7s-date icon-gradient bg-mean-fruit"></i>
+            </div>
+            <div>
+                Fiscal Years & Periods
+                <div class="page-title-subheading">
+                    Manage your organization's fiscal years and accounting periods
+                </div>
+            </div>
+        </div>
+        <div class="page-title-actions">
+            <button class="btn btn-success"
+                    hx-get="{% url 'core:fiscal_year_modal' %}"
+                    hx-target="#fiscalYearModalBody"
+                    hx-swap="innerHTML"
+                    data-bs-toggle="modal"
+                    data-bs-target="#fiscalYearModal">
+                <i class="fa fa-plus"></i> New Fiscal Year
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Summary -->
+{% if fy_stats and period_stats %}
+<div class="stats-summary-compact">
+    <div class="row align-items-center g-3">
+        <div class="col-md-3 col-6">
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fa fa-calendar"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ fy_stats.total_fiscal_years|default:0 }}</h3>
+                    <p>Total Years</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-6">
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fa fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ fy_stats.active_fiscal_years|default:0 }}</h3>
+                    <p>Active Year</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-6">
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fa fa-calendar-check"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ period_stats.total_periods|default:0 }}</h3>
+                    <p>Total Periods</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-6">
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fa fa-play-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ period_stats.active_periods|default:0 }}</h3>
+                    <p>Active Period</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Fiscal Years Content -->
+{% if fiscal_years %}
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <!-- Fiscal Year Selector -->
+        <div class="fiscal-year-selector-wrapper">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h5 class="card-title mb-0">
+                        <i class="pe-7s-calendar me-2"></i>Fiscal Year Management
+                    </h5>
+                    <small class="text-muted">Select a fiscal year to view and manage its periods</small>
+                </div>
+                <div class="col-md-6 text-end">
+                    <div class="d-flex align-items-center justify-content-end gap-2 flex-wrap">
+                        <label for="fiscalYearSelector" class="mb-0 text-muted fw-bold">
+                            <i class="fa fa-filter me-1"></i>Select Year:
+                        </label>
+                        <select id="fiscalYearSelector" class="form-select" onchange="switchFiscalYear(this.value)" style="min-width: 350px;">
+                            {% for fy in fiscal_years %}
+                            <option value="fy-{{ fy.id }}" 
+                                    {% if forloop.first %}selected{% endif %}>
+                                {% if fy.code %}{{ fy.code }}{% else %}FY-{{ fy.start_date|date:"Y" }}{% endif %}
+                                {% if fy.is_active %}● ACTIVE{% elif fy.is_locked %}🔒 LOCKED{% elif fy.is_closed %}⊗ CLOSED{% else %}○ Draft{% endif %}
+                                │ {{ fy.start_date|date:"d M Y" }} - {{ fy.end_date|date:"d M Y" }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fiscal Year Content Sections -->
+        {% for fy in fiscal_years %}
+        <div class="fiscal-year-content" 
+             id="fy-{{ fy.id }}" 
+             style="display: {% if forloop.first %}block{% else %}none{% endif %};">
+            
+            <!-- Fiscal Year Summary Card -->
+            <div class="fiscal-year-summary">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5>{{ fy.name }} 
+                            <span class="status-badge status-{{ fy.status|lower }}">
+                                {{ fy.get_status_display }}
+                            </span>
+                        </h5>
+                        <p class="mb-2 text-muted">
+                            <i class="fa fa-calendar me-1"></i>
+                            <strong>Duration:</strong> 
+                            {{ fy.start_date|date:"F d, Y" }} - {{ fy.end_date|date:"F d, Y" }}
+                            ({{ fy.get_duration_days }} days)
+                        </p>
+                        {% if fy.code %}
+                        <p class="mb-1 text-muted">
+                            <i class="fa fa-tag me-1"></i>
+                            <strong>Code:</strong> {{ fy.code }}
+                        </p>
+                        {% endif %}
+                        {% if fy.description %}
+                        <p class="mb-0 text-muted">
+                            <i class="fa fa-info-circle me-1"></i>
+                            {{ fy.description }}
+                        </p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block mb-1">
+                            <i class="fa fa-chart-line me-1"></i>Progress
+                        </small>
+                        <div class="progress mb-1">
+                            <div class="progress-bar bg-success" 
+                                 style="width: {{ fy.get_progress_percentage }}%">
+                                {{ fy.get_progress_percentage }}%
+                            </div>
+                        </div>
+                        <small class="text-muted">
+                            <i class="fa fa-clock me-1"></i>
+                            {{ fy.get_remaining_days }} days remaining
+                        </small>
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <div class="btn-group-vertical w-100" role="group">
+                            {% if not fy.is_locked %}
+                            <button class="btn btn-sm btn-primary"
+                                    hx-get="{% url 'core:fiscal_year_modal' %}?id={{ fy.id }}"
+                                    hx-target="#fiscalYearModalBody"
+                                    hx-swap="innerHTML"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#fiscalYearModal">
+                                <i class="pe-7s-pen"></i> Edit
+                            </button>
+                            {% endif %}
+                            
+                            {% if not fy.is_active and not fy.is_closed and not fy.is_locked %}
+                            <button class="btn btn-sm btn-success"
+                                    hx-post="{% url 'core:fiscal_year_quick_action' pk=fy.id action='activate' %}"
+                                    hx-swap="none"
+                                    hx-on::after-request="location.reload()"
+                                    hx-confirm="Activate this fiscal year?">
+                                <i class="fa fa-play"></i> Activate
+                            </button>
+                            {% endif %}
+                            
+                            {% if not fy.is_closed and not fy.is_locked %}
+                            <button class="btn btn-sm btn-warning"
+                                    hx-post="{% url 'core:fiscal_year_quick_action' pk=fy.id action='close' %}"
+                                    hx-swap="none"
+                                    hx-on::after-request="location.reload()"
+                                    hx-confirm="Close this fiscal year?">
+                                <i class="pe-7s-lock"></i> Close
+                            </button>
+                            {% endif %}
+                            
+                            {% if fy.is_closed and not fy.is_locked %}
+                            <button class="btn btn-sm btn-danger"
+                                    hx-post="{% url 'core:fiscal_year_quick_action' pk=fy.id action='lock' %}"
+                                    hx-swap="none"
+                                    hx-on::after-request="location.reload()"
+                                    hx-confirm="Lock this fiscal year?">
+                                <i class="fa fa-lock"></i> Lock
+                            </button>
+                            {% endif %}
+                            
+                            {% if fy.is_locked %}
+                            <button class="btn btn-sm btn-info"
+                                    hx-post="{% url 'core:fiscal_year_quick_action' pk=fy.id action='unlock' %}"
+                                    hx-swap="none"
+                                    hx-on::after-request="location.reload()"
+                                    hx-confirm="Unlock this fiscal year?">
+                                <i class="fa fa-unlock"></i> Unlock
+                            </button>
+                            {% endif %}
+                            
+                            {% if fy.can_be_deleted %}
+                            <button class="btn btn-sm btn-outline-danger"
+                                    hx-post="{% url 'core:fiscal_year_delete' pk=fy.id %}"
+                                    hx-swap="none"
+                                    hx-on::after-request="location.reload()"
+                                    hx-confirm="Delete fiscal year '{{ fy.name }}'?">
+                                <i class="pe-7s-trash"></i> Delete
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Periods Section -->
+            <div class="mt-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">
+                        <i class="lnr-calendar-full me-2 text-primary"></i>
+                        <strong>Accounting Periods</strong>
+                        <span class="badge bg-secondary ms-2">{{ fy.periods.count }} Period{{ fy.periods.count|pluralize }}</span>
+                    </h6>
+                    {% if not fy.is_locked %}
+                    <button class="btn btn-sm btn-success"
+                            hx-get="{% url 'core:period_modal' %}?fiscal_year_id={{ fy.id }}"
+                            hx-target="#periodModalBody"
+                            hx-swap="innerHTML"
+                            data-bs-toggle="modal"
+                            data-bs-target="#periodModal">
+                        <i class="fa fa-plus"></i> Add Period
+                    </button>
+                    {% else %}
+                    <span class="text-muted">
+                        <i class="fa fa-lock me-1"></i>Fiscal Year Locked
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th width="5%">#</th>
+                                <th>Period Name</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Duration</th>
+                                <th>Status</th>
+                                <th width="20%">Progress</th>
+                                <th width="15%" class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for period in fy.get_all_periods %}
+                            <tr {% if period.is_active %}class="table-active"{% endif %}>
+                                <td><strong>{{ period.period_number }}</strong></td>
+                                <td>
+                                    <strong>{{ period.name }}</strong>
+                                    {% if period.is_active %}
+                                    <span class="badge bg-primary ms-2">
+                                        <i class="fa fa-play-circle"></i> Active
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ period.start_date|date:"M d, Y" }}</td>
+                                <td>{{ period.end_date|date:"M d, Y" }}</td>
+                                <td>{{ period.get_duration_days }} days</td>
+                                <td>
+                                    <span class="status-badge status-{{ period.status|lower }}">
+                                        {{ period.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                            <div class="progress-bar" 
+                                                 style="width: {{ period.get_progress_percentage }}%"></div>
+                                        </div>
+                                        <small class="text-muted">{{ period.get_progress_percentage }}%</small>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        {% if not period.is_locked %}
+                                        <button class="btn btn-primary"
+                                                hx-get="{% url 'core:period_modal' %}?id={{ period.id }}"
+                                                hx-target="#periodModalBody"
+                                                hx-swap="innerHTML"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#periodModal"
+                                                title="Edit">
+                                            <i class="pe-7s-pen"></i>
+                                        </button>
+                                        {% endif %}
+                                        
+                                        {% if not period.is_active and not period.is_closed %}
+                                        <button class="btn btn-success"
+                                                hx-post="{% url 'core:period_quick_action' pk=period.id action='activate' %}"
+                                                hx-swap="none"
+                                                hx-on::after-request="location.reload()"
+                                                hx-confirm="Activate this period?"
+                                                title="Activate">
+                                            <i class="fa fa-play"></i>
+                                        </button>
+                                        {% endif %}
+                                        
+                                        {% if not period.is_closed %}
+                                        <button class="btn btn-warning"
+                                                hx-post="{% url 'core:period_quick_action' pk=period.id action='close' %}"
+                                                hx-swap="none"
+                                                hx-on::after-request="location.reload()"
+                                                hx-confirm="Close this period?"
+                                                title="Close">
+                                            <i class="pe-7s-lock"></i>
+                                        </button>
+                                        {% endif %}
+                                        
+                                        {% if period.is_closed and not period.is_locked %}
+                                        <button class="btn btn-danger"
+                                                hx-post="{% url 'core:period_quick_action' pk=period.id action='lock' %}"
+                                                hx-swap="none"
+                                                hx-on::after-request="location.reload()"
+                                                hx-confirm="Lock this period?"
+                                                title="Lock">
+                                            <i class="fa fa-lock"></i>
+                                        </button>
+                                        {% endif %}
+                                        
+                                        {% if period.can_be_deleted %}
+                                        <button class="btn btn-outline-danger"
+                                                hx-post="{% url 'core:period_delete' pk=period.id %}"
+                                                hx-swap="none"
+                                                hx-on::after-request="location.reload()"
+                                                hx-confirm="Delete period '{{ period.name }}'?"
+                                                title="Delete">
+                                            <i class="pe-7s-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8">
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon">
+                                            <i class="fa fa-calendar-times"></i>
+                                        </div>
+                                        <h4 class="text-muted mb-3">No Periods Defined</h4>
+                                        <p class="text-muted mb-4">
+                                            This fiscal year doesn't have any accounting periods yet.
+                                        </p>
+                                        {% if not fy.is_locked %}
+                                        <button class="btn btn-success"
+                                                hx-get="{% url 'core:period_modal' %}?fiscal_year_id={{ fy.id }}"
+                                                hx-target="#periodModalBody"
+                                                hx-swap="innerHTML"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#periodModal">
+                                            <i class="fa fa-plus me-1"></i> Add First Period
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% else %}
+<!-- No Fiscal Years -->
+<div class="main-card card">
+    <div class="card-body">
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="pe-7s-date"></i>
+            </div>
+            <h4 class="text-muted mb-3">No Fiscal Years Found</h4>
+            <p class="text-muted mb-4">
+                You haven't created any fiscal years yet.
+            </p>
+            <button class="btn btn-success btn-lg"
+                    hx-get="{% url 'core:fiscal_year_modal' %}"
+                    hx-target="#fiscalYearModalBody"
+                    hx-swap="innerHTML"
+                    data-bs-toggle="modal"
+                    data-bs-target="#fiscalYearModal">
+                <i class="fa fa-plus me-1"></i> Create First Fiscal Year
+            </button>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Fiscal Year Modal -->
+<div class="modal fade" id="fiscalYearModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="pe-7s-date me-2"></i>
+                    <span id="fiscalYearModalTitle">Fiscal Year</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="fiscalYearModalBody">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('fiscalYearForm').requestSubmit()">
+                    <i class="fa fa-save me-1"></i> Save
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Period Modal -->
+<div class="modal fade" id="periodModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="lnr-calendar-full me-2"></i>
+                    <span id="periodModalTitle">Period</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="periodModalBody">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('periodForm').requestSubmit()">
+                    <i class="fa fa-save me-1"></i> Save
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Simple fiscal year switcher (no HTMX needed)
+function switchFiscalYear(targetId) {
+    document.querySelectorAll('[id^="fy-"]').forEach(section => {
+        section.style.display = 'none';
+    });
+    
+    const target = document.getElementById(targetId);
+    if (target) {
+        target.style.display = 'block';
+    }
+}
+
+// HTMX event listener to close modals on successful form submission
+document.body.addEventListener('htmx:afterSwap', function(evt) {
+    // If response indicates success, close modal and reload
+    if (evt.detail.xhr && evt.detail.xhr.status === 200) {
+        const response = evt.detail.xhr.response;
+        if (response && response.includes('"success":true')) {
+            setTimeout(() => location.reload(), 500);
+        }
+    }
+});
+</script>
+{% endblock %}

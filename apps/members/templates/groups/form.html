@@ -1,0 +1,933 @@
+{% extends "base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        border: none;
+    }
+    
+    .section-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px 8px 0 0;
+        margin: 0;
+    }
+    
+    .section-header h6 {
+        margin: 0;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    
+    .section-header p {
+        margin: 5px 0 0 0;
+        opacity: 0.9;
+        font-size: 0.9rem;
+    }
+    
+    .section-body {
+        padding: 25px;
+    }
+    
+    .form-floating {
+        margin-bottom: 1.2rem;
+    }
+    
+    .form-floating label {
+        color: #6c757d;
+        font-weight: 500;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.15);
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+        font-weight: bold;
+    }
+    
+    .form-help {
+        background-color: #e3f2fd;
+        border-left: 4px solid #2196f3;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+    }
+    
+    .form-help h6 {
+        color: #1976d2;
+        margin-bottom: 10px;
+    }
+    
+    .current-value {
+        background-color: #f8f9fa;
+        border-radius: 6px;
+        padding: 10px;
+        margin-bottom: 15px;
+        border-left: 4px solid #28a745;
+    }
+    
+    .current-value-label {
+        font-weight: 600;
+        color: #495057;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .current-value-text {
+        font-size: 1.1rem;
+        color: #212529;
+        margin-top: 5px;
+    }
+    
+    .btn-save-group {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        margin-top: 20px;
+    }
+    
+    .info-icon {
+        color: #17a2b8;
+        cursor: help;
+    }
+    
+    .field-group {
+        background-color: #f8f9fa;
+        border-radius: 6px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .field-group-title {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 12px;
+        font-size: 0.95rem;
+    }
+    
+    .error-summary {
+        background-color: #f8d7da;
+        border-left: 4px solid #dc3545;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+    }
+    
+    .error-summary h6 {
+        color: #721c24;
+        margin-bottom: 10px;
+    }
+    
+    .error-list {
+        margin: 0;
+        padding-left: 20px;
+        color: #721c24;
+    }
+    
+    .invalid-feedback {
+        display: block;
+        font-size: 0.875rem;
+    }
+    
+    .is-invalid {
+        border-color: #dc3545;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right calc(0.375em + 0.1875rem) center;
+        background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+    }
+    
+    .leadership-preview {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 15px;
+    }
+    
+    .leader-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: white;
+        padding: 8px 12px;
+        border-radius: 8px;
+        margin-right: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #dee2e6;
+    }
+    
+    .leader-badge i {
+        color: #667eea;
+    }
+    
+    .meeting-schedule-preview {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 15px;
+    }
+    
+    .schedule-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+    
+    .schedule-item i {
+        color: #1976d2;
+        width: 20px;
+    }
+    
+    @media (max-width: 768px) {
+        .section-body {
+            padding: 15px;
+        }
+        
+        .btn-save-group {
+            padding: 15px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="app-page-title">
+    <div class="page-title-wrapper">
+        <div class="page-title-heading">
+            <div class="page-title-icon">
+                <i class="pe-7s-users icon-gradient bg-mean-fruit"></i>
+            </div>
+            <div>
+                {% if form.instance.pk %}Update Group{% else %}Create New Group{% endif %}
+                <div class="page-title-subheading">
+                    {% if form.instance.pk %}
+                        Update information for {{ form.instance.name }}
+                    {% else %}
+                        Create a new member group for lending, savings, or other purposes
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="page-title-actions">
+            <div class="dropdown">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="fa fa-ellipsis-v me-1"></i> Actions
+                </button>
+                <div class="dropdown-menu dropdown-menu-end">
+                    {% if form.instance.pk %}
+                        <a class="dropdown-item" href="{% url 'members:group_detail' form.instance.pk %}">
+                            <i class="fa fa-eye me-2"></i> View Group Details
+                        </a>
+                        <div class="dropdown-divider"></div>
+                    {% endif %}
+                    <a class="dropdown-item" href="{% url 'members:group_list' %}">
+                        <i class="fa fa-list me-2"></i> Back to Groups List
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Form Help Section -->
+<div class="form-help">
+    <h6><i class="fa fa-info-circle me-1"></i> {% if form.instance.pk %}Update{% else %}Create{% endif %} Guidelines</h6>
+    <div class="row">
+        <div class="col-md-6">
+            <ul class="mb-0">
+                <li><strong>Required fields</strong> are marked with an asterisk (*)</li>
+                <li><strong>Group name</strong> should be unique and descriptive</li>
+                <li><strong>Leadership</strong> positions can be updated anytime</li>
+            </ul>
+        </div>
+        <div class="col-md-6">
+            <ul class="mb-0">
+                <li><strong>Member limits</strong> can be adjusted based on group needs</li>
+                <li><strong>Meeting schedule</strong> helps members stay organized</li>
+                <li><strong>Financial parameters</strong> define contribution and loan limits</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced Error Display Section -->
+{% if form.errors or form.non_field_errors %}
+<div class="error-summary">
+    <h6><i class="fa fa-exclamation-triangle me-2"></i>Please correct the following errors:</h6>
+    
+    {% if form.non_field_errors %}
+        <div class="mb-3">
+            <strong>Form Errors:</strong>
+            <ul class="error-list">
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+    
+    {% if form.errors %}
+        <div class="mb-3">
+            <strong>Field Errors:</strong>
+            <ul class="error-list">
+                {% for field, errors in form.errors.items %}
+                    {% if field != '__all__' %}
+                        <li><strong>{{ field|title }}:</strong>
+                            {% for error in errors %}
+                                {{ error }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Main Form -->
+<form method="post" id="groupForm" novalidate>
+    {% csrf_token %}
+    
+    <!-- Basic Information Section -->
+    <div class="form-section">
+        <div class="section-header">
+            <h6><i class="fa fa-info-circle me-2"></i>Basic Information</h6>
+            <p>Core details about the group</p>
+        </div>
+        <div class="section-body">
+            <div class="row">
+                <!-- Group Name -->
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        {{ form.name|add_class:"form-control"|attr:"placeholder:Group Name" }}
+                        <label for="{{ form.name.id_for_label }}" class="required-field">Group Name</label>
+                        {% if form.name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.name.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Unique and descriptive name for the group</small>
+                    </div>
+                </div>
+
+                <!-- Group Type -->
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        {{ form.group_type|add_class:"form-select"|attr:"placeholder:Group Type" }}
+                        <label for="{{ form.group_type.id_for_label }}" class="required-field">Group Type</label>
+                        {% if form.group_type.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.group_type.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Primary purpose of the group</small>
+                    </div>
+                </div>
+
+                <!-- Formation Date -->
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        {{ form.formation_date|add_class:"form-control"|attr:"placeholder:Formation Date"|attr:"type:date" }}
+                        <label for="{{ form.formation_date.id_for_label }}" class="required-field">Formation Date</label>
+                        {% if form.formation_date.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.formation_date.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">When was this group formed?</small>
+                    </div>
+                </div>
+
+                <!-- Status -->
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        <select name="is_active" id="id_is_active" class="form-select">
+                            <option value="true" {% if form.instance.is_active %}selected{% endif %}>Active</option>
+                            <option value="false" {% if not form.instance.is_active %}selected{% endif %}>Inactive</option>
+                        </select>
+                        <label for="id_is_active">Status</label>
+                        <small class="text-muted">Is this group currently active?</small>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="col-12">
+                    <div class="form-floating">
+                        {{ form.description|add_class:"form-control"|attr:"placeholder:Description"|attr:"style:height: 100px" }}
+                        <label for="{{ form.description.id_for_label }}" class="required-field">Description</label>
+                        {% if form.description.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.description.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Brief description of the group's purpose and activities</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leadership Section -->
+    <div class="form-section">
+        <div class="section-header">
+            <h6><i class="fa fa-crown me-2"></i>Leadership Positions</h6>
+            <p>Assign leadership roles for the group</p>
+        </div>
+        <div class="section-body">
+            <div class="row">
+                <!-- Group Leader -->
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        {{ form.group_leader|add_class:"form-select"|attr:"placeholder:Group Leader" }}
+                        <label for="{{ form.group_leader.id_for_label }}">
+                            <i class="fa fa-user-tie me-1"></i> Group Leader
+                        </label>
+                        {% if form.group_leader.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.group_leader.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Primary leader of the group</small>
+                    </div>
+                </div>
+
+                <!-- Group Secretary -->
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        {{ form.group_secretary|add_class:"form-select"|attr:"placeholder:Group Secretary" }}
+                        <label for="{{ form.group_secretary.id_for_label }}">
+                            <i class="fa fa-file-signature me-1"></i> Group Secretary
+                        </label>
+                        {% if form.group_secretary.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.group_secretary.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Records keeper and administrator</small>
+                    </div>
+                </div>
+
+                <!-- Group Treasurer -->
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        {{ form.group_treasurer|add_class:"form-select"|attr:"placeholder:Group Treasurer" }}
+                        <label for="{{ form.group_treasurer.id_for_label }}">
+                            <i class="fa fa-money-bill-wave me-1"></i> Group Treasurer
+                        </label>
+                        {% if form.group_treasurer.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.group_treasurer.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Financial manager</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leadership Preview -->
+            <div class="leadership-preview" id="leadershipPreview" style="display: none;">
+                <div class="mb-2" style="font-weight: 600; color: #495057;">
+                    <i class="fa fa-users me-1"></i> Leadership Team
+                </div>
+                <div id="leadershipBadges"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Member Capacity Section -->
+    <div class="form-section">
+        <div class="section-header">
+            <h6><i class="fa fa-users-cog me-2"></i>Member Capacity</h6>
+            <p>Set minimum and maximum member limits</p>
+        </div>
+        <div class="section-body">
+            <div class="row">
+                <!-- Minimum Members -->
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        {{ form.minimum_members|add_class:"form-control"|attr:"placeholder:Minimum Members"|attr:"type:number"|attr:"min:1" }}
+                        <label for="{{ form.minimum_members.id_for_label }}" class="required-field">Minimum Members</label>
+                        {% if form.minimum_members.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.minimum_members.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Minimum number of members required</small>
+                    </div>
+                </div>
+
+                <!-- Maximum Members -->
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        {{ form.maximum_members|add_class:"form-control"|attr:"placeholder:Maximum Members"|attr:"type:number"|attr:"min:1" }}
+                        <label for="{{ form.maximum_members.id_for_label }}" class="required-field">Maximum Members</label>
+                        {% if form.maximum_members.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.maximum_members.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Maximum number of members allowed</small>
+                    </div>
+                </div>
+
+                {% if form.instance.pk %}
+                <div class="col-12">
+                    <div class="current-value">
+                        <div class="current-value-label">Current Membership</div>
+                        <div class="current-value-text">
+                            {{ form.instance.member_count }} members 
+                            ({{ form.instance.available_slots }} slots available)
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Meeting Schedule Section -->
+    <div class="form-section">
+        <div class="section-header">
+            <h6><i class="fa fa-calendar-alt me-2"></i>Meeting Schedule</h6>
+            <p>Define when and where the group meets</p>
+        </div>
+        <div class="section-body">
+            <div class="row">
+                <!-- Meeting Frequency -->
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        {{ form.meeting_frequency|add_class:"form-select"|attr:"placeholder:Meeting Frequency" }}
+                        <label for="{{ form.meeting_frequency.id_for_label }}" class="required-field">Meeting Frequency</label>
+                        {% if form.meeting_frequency.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.meeting_frequency.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">How often does the group meet?</small>
+                    </div>
+                </div>
+
+                <!-- Meeting Day -->
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        {{ form.meeting_day|add_class:"form-select"|attr:"placeholder:Meeting Day" }}
+                        <label for="{{ form.meeting_day.id_for_label }}">Meeting Day</label>
+                        {% if form.meeting_day.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.meeting_day.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Day of the week for meetings</small>
+                    </div>
+                </div>
+
+                <!-- Meeting Time -->
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        {{ form.meeting_time|add_class:"form-control"|attr:"placeholder:Meeting Time"|attr:"type:time" }}
+                        <label for="{{ form.meeting_time.id_for_label }}">Meeting Time</label>
+                        {% if form.meeting_time.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.meeting_time.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Time of day for meetings</small>
+                    </div>
+                </div>
+
+                <!-- Meeting Location -->
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        {{ form.meeting_location|add_class:"form-control"|attr:"placeholder:Meeting Location" }}
+                        <label for="{{ form.meeting_location.id_for_label }}">Meeting Location</label>
+                        {% if form.meeting_location.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.meeting_location.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Where does the group meet?</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Meeting Schedule Preview -->
+            <div class="meeting-schedule-preview" id="schedulePreview" style="display: none;">
+                <div class="mb-2" style="font-weight: 600; color: #1976d2;">
+                    <i class="fa fa-calendar-check me-1"></i> Meeting Schedule
+                </div>
+                <div id="scheduleDetails"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Financial Parameters Section -->
+    <div class="form-section">
+        <div class="section-header">
+            <h6><i class="fa fa-coins me-2"></i>Financial Parameters</h6>
+            <p>Set contribution and loan limits</p>
+        </div>
+        <div class="section-body">
+            <div class="row">
+                <!-- Minimum Contribution -->
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        {{ form.minimum_contribution|add_class:"form-control"|attr:"placeholder:Minimum Contribution"|attr:"type:number"|attr:"step:0.01"|attr:"min:0" }}
+                        <label for="{{ form.minimum_contribution.id_for_label }}">
+                            <i class="fa fa-piggy-bank me-1"></i> Minimum Contribution
+                        </label>
+                        {% if form.minimum_contribution.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.minimum_contribution.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Minimum monthly contribution (UGX)</small>
+                    </div>
+                </div>
+
+                <!-- Maximum Loan Amount -->
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        {{ form.maximum_loan_amount|add_class:"form-control"|attr:"placeholder:Maximum Loan Amount"|attr:"type:number"|attr:"step:0.01"|attr:"min:0" }}
+                        <label for="{{ form.maximum_loan_amount.id_for_label }}">
+                            <i class="fa fa-hand-holding-usd me-1"></i> Maximum Loan Amount
+                        </label>
+                        {% if form.maximum_loan_amount.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.maximum_loan_amount.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Maximum loan amount (UGX)</small>
+                    </div>
+                </div>
+
+                <!-- Interest Rate -->
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        {{ form.interest_rate|add_class:"form-control"|attr:"placeholder:Interest Rate"|attr:"type:number"|attr:"step:0.01"|attr:"min:0"|attr:"max:100" }}
+                        <label for="{{ form.interest_rate.id_for_label }}">
+                            <i class="fa fa-percent me-1"></i> Interest Rate
+                        </label>
+                        {% if form.interest_rate.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.interest_rate.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Monthly interest rate (%)</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rules and Regulations Section -->
+    <div class="form-section">
+        <div class="section-header">
+            <h6><i class="fa fa-gavel me-2"></i>Rules and Regulations</h6>
+            <p>Define group policies and guidelines</p>
+        </div>
+        <div class="section-body">
+            <div class="row">
+                <!-- Terms and Conditions -->
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        {{ form.terms_and_conditions|add_class:"form-control"|attr:"placeholder:Terms and Conditions"|attr:"style:height: 150px" }}
+                        <label for="{{ form.terms_and_conditions.id_for_label }}">Terms and Conditions</label>
+                        {% if form.terms_and_conditions.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.terms_and_conditions.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Terms members must agree to</small>
+                    </div>
+                </div>
+
+                <!-- Group Rules -->
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        {{ form.group_rules|add_class:"form-control"|attr:"placeholder:Group Rules"|attr:"style:height: 150px" }}
+                        <label for="{{ form.group_rules.id_for_label }}">Group Rules</label>
+                        {% if form.group_rules.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.group_rules.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Operating rules and guidelines</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="btn-save-group">
+        <button type="submit" class="btn btn-primary btn-lg me-2" id="saveButton">
+            <i class="fa fa-save me-2"></i>
+            {% if form.instance.pk %}Update Group{% else %}Create Group{% endif %}
+        </button>
+        <a href="{% url 'members:group_list' %}" class="btn btn-outline-secondary btn-lg">
+            <i class="fa fa-times me-2"></i> Cancel
+        </a>
+    </div>
+</form>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ------------------------------------------------------------------------
+    // Form Validation
+    // ------------------------------------------------------------------------
+    const form = document.getElementById('groupForm');
+    
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        // Clear previous validation states
+        document.querySelectorAll('.is-invalid').forEach(el => {
+            el.classList.remove('is-invalid');
+        });
+        
+        // Validate required fields
+        const requiredFields = [
+            { id: 'id_name', name: 'Group Name' },
+            { id: 'id_group_type', name: 'Group Type' },
+            { id: 'id_formation_date', name: 'Formation Date' },
+            { id: 'id_description', name: 'Description' },
+            { id: 'id_minimum_members', name: 'Minimum Members' },
+            { id: 'id_maximum_members', name: 'Maximum Members' },
+            { id: 'id_meeting_frequency', name: 'Meeting Frequency' },
+        ];
+        
+        requiredFields.forEach(field => {
+            const element = document.getElementById(field.id);
+            if (element && !element.value.trim()) {
+                element.classList.add('is-invalid');
+                isValid = false;
+            }
+        });
+        
+        // Validate member limits
+        const minMembers = parseInt(document.getElementById('id_minimum_members').value);
+        const maxMembers = parseInt(document.getElementById('id_maximum_members').value);
+        
+        if (minMembers && maxMembers && minMembers > maxMembers) {
+            document.getElementById('id_minimum_members').classList.add('is-invalid');
+            document.getElementById('id_maximum_members').classList.add('is-invalid');
+            alert('Minimum members cannot be greater than maximum members');
+            isValid = false;
+        }
+        
+        // Validate formation date
+        const formationDate = new Date(document.getElementById('id_formation_date').value);
+        const today = new Date();
+        
+        if (formationDate > today) {
+            document.getElementById('id_formation_date').classList.add('is-invalid');
+            alert('Formation date cannot be in the future');
+            isValid = false;
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            // Scroll to first error
+            const firstError = document.querySelector('.is-invalid');
+            if (firstError) {
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                firstError.focus();
+            }
+        }
+    });
+    
+    // ------------------------------------------------------------------------
+    // Leadership Preview
+    // ------------------------------------------------------------------------
+    function updateLeadershipPreview() {
+        const leader = document.getElementById('id_group_leader');
+        const secretary = document.getElementById('id_group_secretary');
+        const treasurer = document.getElementById('id_group_treasurer');
+        const preview = document.getElementById('leadershipPreview');
+        const badges = document.getElementById('leadershipBadges');
+        
+        let html = '';
+        
+        if (leader.value) {
+            const leaderText = leader.options[leader.selectedIndex].text;
+            html += `
+                <div class="leader-badge">
+                    <i class="fa fa-user-tie"></i>
+                    <div>
+                        <div style="font-size: 0.75rem; color: #6c757d;">Leader</div>
+                        <div style="font-weight: 600;">${leaderText}</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        if (secretary.value) {
+            const secretaryText = secretary.options[secretary.selectedIndex].text;
+            html += `
+                <div class="leader-badge">
+                    <i class="fa fa-file-signature"></i>
+                    <div>
+                        <div style="font-size: 0.75rem; color: #6c757d;">Secretary</div>
+                        <div style="font-weight: 600;">${secretaryText}</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        if (treasurer.value) {
+            const treasurerText = treasurer.options[treasurer.selectedIndex].text;
+            html += `
+                <div class="leader-badge">
+                    <i class="fa fa-money-bill-wave"></i>
+                    <div>
+                        <div style="font-size: 0.75rem; color: #6c757d;">Treasurer</div>
+                        <div style="font-weight: 600;">${treasurerText}</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        if (html) {
+            badges.innerHTML = html;
+            preview.style.display = 'block';
+        } else {
+            preview.style.display = 'none';
+        }
+    }
+    
+    document.getElementById('id_group_leader').addEventListener('change', updateLeadershipPreview);
+    document.getElementById('id_group_secretary').addEventListener('change', updateLeadershipPreview);
+    document.getElementById('id_group_treasurer').addEventListener('change', updateLeadershipPreview);
+    
+    // Initialize leadership preview
+    updateLeadershipPreview();
+    
+    // ------------------------------------------------------------------------
+    // Meeting Schedule Preview
+    // ------------------------------------------------------------------------
+    function updateSchedulePreview() {
+        const frequency = document.getElementById('id_meeting_frequency');
+        const day = document.getElementById('id_meeting_day');
+        const time = document.getElementById('id_meeting_time');
+        const location = document.getElementById('id_meeting_location');
+        const preview = document.getElementById('schedulePreview');
+        const details = document.getElementById('scheduleDetails');
+        
+        let html = '';
+        
+        if (frequency.value) {
+            const frequencyText = frequency.options[frequency.selectedIndex].text;
+            html += `
+                <div class="schedule-item">
+                    <i class="fa fa-calendar-alt"></i>
+                    <div><strong>Frequency:</strong> ${frequencyText}</div>
+                </div>
+            `;
+        }
+        
+        if (day.value) {
+            const dayText = day.options[day.selectedIndex].text;
+            html += `
+                <div class="schedule-item">
+                    <i class="fa fa-calendar-day"></i>
+                    <div><strong>Day:</strong> ${dayText}</div>
+                </div>
+            `;
+        }
+        
+        if (time.value) {
+            html += `
+                <div class="schedule-item">
+                    <i class="fa fa-clock"></i>
+                    <div><strong>Time:</strong> ${time.value}</div>
+                </div>
+            `;
+        }
+        
+        if (location.value) {
+            html += `
+                <div class="schedule-item">
+                    <i class="fa fa-map-marker-alt"></i>
+                    <div><strong>Location:</strong> ${location.value}</div>
+                </div>
+            `;
+        }
+        
+        if (html) {
+            details.innerHTML = html;
+            preview.style.display = 'block';
+        } else {
+            preview.style.display = 'none';
+        }
+    }
+    
+    document.getElementById('id_meeting_frequency').addEventListener('change', updateSchedulePreview);
+    document.getElementById('id_meeting_day').addEventListener('change', updateSchedulePreview);
+    document.getElementById('id_meeting_time').addEventListener('input', updateSchedulePreview);
+    document.getElementById('id_meeting_location').addEventListener('input', updateSchedulePreview);
+    
+    // Initialize schedule preview
+    updateSchedulePreview();
+    
+    // ------------------------------------------------------------------------
+    // Real-time field validation
+    // ------------------------------------------------------------------------
+    document.querySelectorAll('input, select, textarea').forEach(field => {
+        field.addEventListener('blur', function() {
+            if (this.hasAttribute('required') || this.classList.contains('required-field')) {
+                if (!this.value.trim()) {
+                    this.classList.add('is-invalid');
+                } else {
+                    this.classList.remove('is-invalid');
+                }
+            }
+        });
+        
+        field.addEventListener('input', function() {
+            if (this.classList.contains('is-invalid') && this.value.trim()) {
+                this.classList.remove('is-invalid');
+            }
+        });
+    });
+    
+    // ------------------------------------------------------------------------
+    // Number formatting for financial fields
+    // ------------------------------------------------------------------------
+    const financialFields = ['id_minimum_contribution', 'id_maximum_loan_amount'];
+    
+    financialFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.addEventListener('blur', function() {
+                if (this.value) {
+                    const value = parseFloat(this.value);
+                    if (!isNaN(value)) {
+                        this.value = value.toFixed(2);
+                    }
+                }
+            });
+        }
+    });
+    
+    console.log('Group Form JavaScript loaded successfully');
+});
+</script>
+{% endblock %}

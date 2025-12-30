@@ -1,0 +1,251 @@
+{% load static %} 
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, shrink-to-fit=no">
+        <title>SACCO Management - Login</title>
+        <meta name="description" content="SACCO Management System - Access your dashboard">
+        <!-- Disable tap highlight on IE -->
+        <meta name="msapplication-tap-highlight" content="no">
+        <!-- Font Awesome -->
+        <link rel="stylesheet" href="{% static 'vendors/@fortawesome/fontawesome-free/css/all.min.css' %}">
+        <!-- Slick Carousel CSS -->
+        <link rel="stylesheet" href="{% static 'vendors/slick-carousel/slick/slick.css' %}">
+        <!-- Core CSS -->
+        <link href="{% static 'css/base.css' %}" rel="stylesheet">
+        <link rel="shortcut icon" href="{% static 'images/logo.png' %}">
+    </head>
+    <body>
+        <div class="app-container app-theme-white body-tabs-shadow">
+            <div class="app-container">
+                <div class="h-100">
+                    <div class="h-100 g-0 row">
+                        <!-- Left Side - Carousel Slider -->
+                        <div class="d-none d-lg-block col-lg-4">
+                            <div class="slider-light">
+                                <div class="slick-slider">
+                                    <div>
+                                        <div class="position-relative h-100 d-flex justify-content-center align-items-center bg-plum-plate" tabindex="-1">
+                                            <div class="slide-img-bg" style="background-image: url('{% static 'images/originals/city.jpg' %}');"></div>
+                                            <div class="slider-content">
+                                                <h3>SACCO Management Made Easy</h3>
+                                                <p>
+                                                    Comprehensive SACCO management system with powerful tools for 
+                                                    member management, loans, savings, and financial reporting.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="position-relative h-100 d-flex justify-content-center align-items-center bg-premium-dark" tabindex="-1">
+                                            <div class="slide-img-bg" style="background-image: url('{% static 'images/originals/citynights.jpg' %}');"></div>
+                                            <div class="slider-content">
+                                                <h3>Secure & Reliable</h3>
+                                                <p>
+                                                    Bank-grade security with multi-factor authentication, account locking,
+                                                    and comprehensive audit trails for complete peace of mind.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="position-relative h-100 d-flex justify-content-center align-items-center bg-sunny-morning" tabindex="-1">
+                                            <div class="slide-img-bg" style="background-image: url('{% static 'images/originals/citydark.jpg' %}');"></div>
+                                            <div class="slider-content">
+                                                <h3>Real-time Insights</h3>
+                                                <p>
+                                                    Get instant access to member data, financial reports, and analytics 
+                                                    to make informed decisions for your SACCO.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Side - Login Form -->
+                        <div class="h-100 d-flex bg-white justify-content-center align-items-center col-md-12 col-lg-8">
+                            <div class="mx-auto app-login-box col-sm-12 col-md-10 col-lg-9">
+                                <!-- Logo -->
+                                <div class="app-logo mb-4">
+                                    <img src="{% static 'images/logo.png' %}" alt="SACCO Logo" style="max-width: 80px;">
+                                </div>
+                                
+                                <!-- Welcome Message -->
+                                <h4 class="mb-0">
+                                    <span class="d-block">Welcome back,</span>
+                                    <span>Please sign in to your account.</span>
+                                </h4>
+                                <h6 class="mt-3">No account?
+                                    <a href="{% url 'accounts:register' %}" class="text-primary">Sign up now</a>
+                                </h6>
+                                
+                                <div class="divider row"></div>
+
+                                <!-- Success/Error Messages -->
+                                {% if messages %}
+                                    {% for message in messages %}
+                                    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                                        <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' or message.tags == 'danger' %}exclamation-circle{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                    {% endfor %}
+                                {% endif %}
+
+                                <!-- Non-field errors -->
+                                {% if form.non_field_errors %}
+                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                    <i class="fas fa-exclamation-circle me-2"></i>
+                                    {% for error in form.non_field_errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Login Form -->
+                                <div>
+                                    <form method="post" novalidate>
+                                        {% csrf_token %}
+
+                                        <!-- Hidden next field -->
+                                        {% if request.GET.next %}
+                                        <input type="hidden" name="next" value="{{ request.GET.next }}">
+                                        {% endif %}
+                                        
+                                        <div class="row">
+                                            <!-- Email Field -->
+                                            <div class="col-md-12 mb-3">
+                                                <label for="{{ form.username.id_for_label }}" class="form-label">
+                                                    <i class="fas fa-envelope me-1"></i>Email Address
+                                                </label>
+                                                <input type="email" 
+                                                    class="form-control {% if form.username.errors %}is-invalid{% endif %}" 
+                                                    id="{{ form.username.id_for_label }}"
+                                                    name="{{ form.username.name }}"
+                                                    value="{{ form.username.value|default:'' }}"
+                                                    placeholder="Enter your email address"
+                                                    autofocus
+                                                    required>
+                                                {% if form.username.errors %}
+                                                    {% for error in form.username.errors %}
+                                                    <div class="invalid-feedback">{{ error }}</div>
+                                                    {% endfor %}
+                                                {% endif %}
+                                            </div>
+
+                                            <!-- Password Field -->
+                                            <div class="col-md-12 mb-3">
+                                                <label for="{{ form.password.id_for_label }}" class="form-label">
+                                                    <i class="fas fa-lock me-1"></i>Password
+                                                </label>
+                                                <div class="input-group">
+                                                    <input type="password" 
+                                                        class="form-control {% if form.password.errors %}is-invalid{% endif %}" 
+                                                        id="{{ form.password.id_for_label }}"
+                                                        name="{{ form.password.name }}"
+                                                        placeholder="Enter your password"
+                                                        required>
+                                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    {% if form.password.errors %}
+                                                    <div class="invalid-feedback d-block">
+                                                        {% for error in form.password.errors %}
+                                                            {{ error }}
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Remember Me Checkbox -->
+                                        <div class="position-relative form-check mb-3">
+                                            <input type="checkbox" 
+                                                class="form-check-input" 
+                                                id="{{ form.remember_me.id_for_label }}"
+                                                name="{{ form.remember_me.name }}"
+                                                {% if form.remember_me.value %}checked{% endif %}>
+                                            <label for="{{ form.remember_me.id_for_label }}" class="form-check-label">
+                                                Keep me signed in
+                                            </label>
+                                        </div>
+                                        
+                                        <div class="divider row"></div>
+                                        
+                                        <!-- Action Buttons -->
+                                        <div class="d-flex align-items-center">
+                                            <div class="ms-auto">
+                                                <a href="#" class="btn-lg btn btn-link">
+                                                    <i class="fas fa-key me-1"></i>Recover Password
+                                                </a>
+                                                <button class="btn btn-primary btn-lg" type="submit">
+                                                    <i class="fas fa-sign-in-alt me-2"></i>Login to Dashboard
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <!-- Additional Info -->
+                                <div class="text-center mt-4">
+                                    <small class="text-muted">
+                                        <i class="fas fa-shield-alt me-1"></i>
+                                        Your connection is secure and encrypted
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Plugin Dependencies -->
+        <script type="text/javascript" src="{% static 'vendors/jquery/dist/jquery.min.js' %}"></script>
+        <script type="text/javascript" src="{% static 'vendors/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
+        <script type="text/javascript" src="{% static 'vendors/slick-carousel/slick/slick.min.js' %}"></script>
+
+        <!-- Password Toggle Script -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const togglePassword = document.getElementById('togglePassword');
+                const passwordField = document.getElementById('{{ form.password.id_for_label }}');
+                
+                if (togglePassword && passwordField) {
+                    togglePassword.addEventListener('click', function() {
+                        const icon = this.querySelector('i');
+                        
+                        if (passwordField.type === 'password') {
+                            passwordField.type = 'text';
+                            icon.classList.remove('fa-eye');
+                            icon.classList.add('fa-eye-slash');
+                        } else {
+                            passwordField.type = 'password';
+                            icon.classList.remove('fa-eye-slash');
+                            icon.classList.add('fa-eye');
+                        }
+                    });
+                }
+
+                // Auto-dismiss alerts after 5 seconds
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(function(alert) {
+                    setTimeout(function() {
+                        const bsAlert = new bootstrap.Alert(alert);
+                        bsAlert.close();
+                    }, 5000);
+                });
+            });
+        </script>
+        
+        <!-- Custom JS -->
+        <script type="text/javascript" src="{% static 'js/carousel-slider.js' %}"></script>
+    </body>
+</html>

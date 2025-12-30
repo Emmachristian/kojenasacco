@@ -1,0 +1,45 @@
+<div class="modal-content">
+    <div class="modal-header bg-success">
+        <h5 class="modal-title text-white">
+            <i class="fa fa-check-circle me-2"></i>Activate Member
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <form hx-post="{% url 'members:member_activate_submit' member.pk %}"
+          hx-target="#member-card-{{ member.pk }}"
+          hx-swap="outerHTML">
+        {% csrf_token %}
+        <div class="modal-body">
+            <div class="alert alert-info">
+                <i class="fa fa-info-circle me-2"></i>
+                <strong>Confirm Activation</strong>
+            </div>
+            
+            <p>Are you sure you want to activate the following member?</p>
+            
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h6 class="mb-2"><strong>{{ member.get_full_name }}</strong></h6>
+                    <p class="mb-1"><strong>Member #:</strong> {{ member.member_number }}</p>
+                    <p class="mb-1"><strong>Current Status:</strong> 
+                        <span class="badge bg-secondary">{{ member.get_status_display }}</span>
+                    </p>
+                    <p class="mb-0"><strong>Category:</strong> {{ member.get_member_category_display }}</p>
+                </div>
+            </div>
+            
+            <div class="alert alert-warning mt-3 mb-0">
+                <i class="fa fa-exclamation-triangle me-2"></i>
+                This will change the member's status to <strong>Active</strong> and restore full access to services.
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <i class="fa fa-times me-1"></i>Cancel
+            </button>
+            <button type="submit" class="btn btn-success">
+                <i class="fa fa-check-circle me-1"></i>Activate Member
+            </button>
+        </div>
+    </form>
+</div>

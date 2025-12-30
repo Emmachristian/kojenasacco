@@ -49,8 +49,13 @@ INSTALLED_APPS = [
     'savings',
     'dividends',
     'loans',
+    'shares',
     'projects',
     'utils',
+
+    # Third-party Apps
+    'django.contrib.humanize',
+    'widget_tweaks',   
 ]
 
 MIDDLEWARE = [
@@ -74,12 +79,36 @@ TEMPLATES = [
         'APP_DIRS': True,            # ← enables app templates
         'OPTIONS': {
             'context_processors': [
+                # Django default context processors
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+
+                # ========================================================
+                # ACCOUNTS APP CONTEXT PROCESSORS (User & SACCO)
+                # ========================================================
+                'accounts.context_processors.active_sacco',
+                'accounts.context_processors.user_context',
+                'accounts.context_processors.sacco_context',
+                'accounts.context_processors.theme_colors',
+
+                # ========================================================
+                # CORE APP CONTEXT PROCESSORS (Financial & System)
+                # ========================================================
+                'core.context_processors.financial_settings',
+                'core.context_processors.sacco_configuration',
+                'core.context_processors.active_fiscal_period',
+                'core.context_processors.payment_methods_context',
+                'core.context_processors.tax_rates_context',
+                'core.context_processors.units_of_measure_context',
+                'core.context_processors.member_financial_summary',
+                'core.context_processors.formatting_helpers',
+                'core.context_processors.system_status',
+                'core.context_processors.quick_access_data',
+                'core.context_processors.sacco_branding',
             ],
-            'libraries': {  # ← ADD THIS
+            'libraries': {
                 'custom_filters': 'utils.templatetags.custom_filters',
             },
         },
@@ -94,11 +123,43 @@ WSGI_APPLICATION = 'kojenasacco.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'sacco_core_db',
+        'USER': 'root',
+        'PASSWORD': '',
+        'HOST': 'localhost',
+        'PORT': '3306',
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+        },
+    },
+
+    'tumaini_sacco': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'tumaini_sacco_db',
+        'USER': 'root',
+        'PASSWORD': '',
+        'HOST': 'localhost',
+        'PORT': '3306',
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+        },
+    },
+
+    'uhuru_sacco': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'uhuru_sacco_db',
+        'USER': 'root',
+        'PASSWORD': '',
+        'HOST': 'localhost',
+        'PORT': '3306',
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+        },
     }
 }
 
+DATABASE_ROUTERS = ['kojenasacco.routers.SaccoRouter']
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -118,6 +179,17 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Authentication Backends - Custom email authentication
+AUTHENTICATION_BACKENDS = [
+    'accounts.backends.SaccoAuthBackend',  # Email auth + SACCO validation + account locking
+    'accounts.backends.PermissionBackend',  # Custom SACCO permissions
+]
+
+# Ensure JSON serializer for UUID support
+SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
+
+# Optional: Use database sessions for better UUID handling
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/

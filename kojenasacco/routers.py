@@ -32,17 +32,13 @@ class SaccoRouter:
     # Apps that should use SACCO-specific databases
     sacco_apps = {
         'core',
-        'members',           # SACCO members
-        'loans',             # Loan management
-        'savings',           # Savings accounts
-        'shares',            # Share capital
-        'dividends',         # Dividend management
-        'transactions',      # Financial transactions
-        'finance',           # Financial operations
-        'hr',                # Human resources
-        'messaging',         # Internal messaging
-        'reports',           # Reporting
-        'utils',             # Utilities
+        'members',
+        'loans',
+        'savings',
+        'dividends',
+        'shares',
+        'projects',
+        'utils',
     }
     
     # Models that must always use default database
@@ -53,8 +49,6 @@ class SaccoRouter:
         'auth.user',
         'auth.group',
         'auth.permission',
-        'core.company',      # Company/SACCO registry
-        'core.sacco',        # SACCO registry (if separate)
     }
 
     def __init__(self):
@@ -63,11 +57,11 @@ class SaccoRouter:
         self._update_sacco_dbs()
 
     def _update_sacco_dbs(self):
-        """Cache all SACCO databases from settings"""
+        """Cache all SACCO databases from settings (any database except 'default')"""
         try:
             self._sacco_dbs = {
                 db_name for db_name in settings.DATABASES.keys()
-                if db_name != 'default' and db_name.startswith('sacco_')
+                if db_name != 'default'
             }
             logger.debug(f"SACCO databases: {self._sacco_dbs}")
         except Exception as e:
@@ -78,11 +72,6 @@ class SaccoRouter:
         """Check if a model should always use the default database"""
         label = f"{model._meta.app_label}.{model._meta.model_name}".lower()
         return label in self.always_default_models
-
-    def _is_system_command(self):
-        """Check if current command is a system management command"""
-        cmds = ['makemigrations', 'migrate', 'showmigrations', 'sqlmigrate']
-        return any(cmd in sys.argv for cmd in cmds)
 
     def db_for_read(self, model, **hints):
         """Determine which database to use for reads"""
@@ -132,16 +121,17 @@ class SaccoRouter:
             return True
         
         # Allow cross-database relations between default and SACCO apps
-        # (e.g., Member -> User, Loan -> User)
         if (app1 in self.default_apps and app2 in self.sacco_apps) or \
            (app2 in self.default_apps and app1 in self.sacco_apps):
             return True
         
-        # Deny all other relations
         return None
 
     def allow_migrate(self, db, app_label, model_name=None, **hints):
         """Control which apps/models can be migrated to which databases"""
+        
+        # Update SACCO databases cache
+        self._update_sacco_dbs()
         
         # Check for always-default models
         if model_name:
@@ -159,7 +149,7 @@ class SaccoRouter:
             if db == 'default':
                 return False
             
-            # Only allow migration to valid SACCO databases
+            # Allow migration to any non-default database
             return db in self._sacco_dbs
         
         # Unknown apps default to 'default' database

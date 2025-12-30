@@ -1,0 +1,19 @@
+"""
+<!-- Add reverse button -->
+<div class="card-header">
+    <h5>Payment Details</h5>
+    {% if not payment.is_reversed %}
+    <button class="btn btn-warning"
+            hx-get="{% url 'loans:payment_reverse_modal' payment.id %}"
+            hx-target="#modal-content"
+            hx-swap="innerHTML">
+        <i class="bi bi-arrow-counterclockwise me-1"></i> Reverse Payment
+    </button>
+    {% endif %}
+</div>
+
+<!-- Payment content with ID for targeting -->
+<div id="payment-card-{{ payment.id }}" class="card-body">
+    <!-- Payment details -->
+</div>
+"""

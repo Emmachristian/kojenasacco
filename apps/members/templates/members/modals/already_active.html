@@ -1,0 +1,20 @@
+<div class="modal-content">
+    <div class="modal-header bg-info">
+        <h5 class="modal-title text-white">
+            <i class="fa fa-info-circle me-2"></i>Member Already Active
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+        <div class="alert alert-info">
+            <i class="fa fa-check-circle me-2"></i>
+            <strong>{{ member.get_full_name }}</strong> is already active.
+        </div>
+        <p class="mb-0">No action needed. This member already has active status.</p>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+            <i class="fa fa-check me-1"></i>OK
+        </button>
+    </div>
+</div>

@@ -1,0 +1,31 @@
+<!-- templates/loans/applications/_application_card.html --> 
+
+<div id="application-card-{{ application.id }}" class="card mb-3">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h5 class="card-title">
+                    #{{ application.application_number }}
+                    <span class="badge bg-{{ application.status_badge_class }}">
+                        {{ application.get_status_display }}
+                    </span>
+                </h5>
+                <p class="mb-1">
+                    <strong>Member:</strong> {{ application.member.get_full_name }}<br>
+                    <strong>Product:</strong> {{ application.loan_product.name }}<br>
+                    <strong>Amount:</strong> {{ application.formatted_amount_requested }}
+                </p>
+            </div>
+            <div>
+                {% if application.can_be_approved %}
+                <button class="btn btn-sm btn-success"
+                        hx-get="{% url 'loans:application_approve_modal' application.id %}"
+                        hx-target="#modal-content"
+                        hx-swap="innerHTML">
+                    <i class="bi bi-check-circle"></i> Review
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>

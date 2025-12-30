@@ -1,0 +1,58 @@
+<!-- templates/loans/modals/reverse_payment.html --> 
+
+{% load widget_tweaks %}
+
+<div class="modal-header bg-warning">
+    <h5 class="modal-title">Reverse Payment</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+
+<form hx-post="{% url 'loans:payment_reverse_submit' payment.id %}"
+      hx-target="#payment-row-{{ payment.id }}"
+      hx-swap="outerHTML">
+    {% csrf_token %}
+    
+    <div class="modal-body">
+        {% if error_message %}
+        <div class="alert alert-danger">{{ error_message }}</div>
+        {% endif %}
+        
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            You are about to reverse payment <strong>{{ payment.payment_number }}</strong>
+        </div>
+        
+        <!-- Payment Details -->
+        <div class="card bg-light mb-3">
+            <div class="card-body">
+                <strong>Amount:</strong> {{ payment.formatted_amount }}<br>
+                <strong>Date:</strong> {{ payment.payment_date|date:"M d, Y" }}<br>
+                <strong>Loan:</strong> {{ payment.loan.loan_number }}<br>
+                <strong>Member:</strong> {{ payment.loan.member.get_full_name }}
+            </div>
+        </div>
+        
+        <!-- Form Fields -->
+        {% for field in form %}
+        <div class="mb-3">
+            {{ field.label_tag }}
+            {% render_field field class="form-control" %}
+            {% if field.errors %}
+            <div class="invalid-feedback d-block">
+                {{ field.errors|first }}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Cancel
+        </button>
+        <button type="submit" class="btn btn-warning">
+            <span class="htmx-indicator spinner-border spinner-border-sm me-2"></span>
+            <i class="bi bi-arrow-counterclockwise me-1"></i> Reverse Payment
+        </button>
+    </div>
+</form>

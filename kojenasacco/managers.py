@@ -158,19 +158,17 @@ def execute_on_all_sacco_databases(func, *args, **kwargs):
     
     return results
 
-
 def get_all_sacco_databases():
     """
-    Get list of all SACCO database names.
+    Get list of all SACCO database names (any database except 'default').
     
     Returns:
         list: List of SACCO database names
     """
     return [
         db for db in settings.DATABASES.keys()
-        if db.startswith('sacco_')
+        if db != 'default'
     ]
-
 
 def validate_sacco_database(db_name):
     """
@@ -189,8 +187,27 @@ def validate_sacco_database(db_name):
         logger.warning(f"Database '{db_name}' not found in settings")
         return False
     
-    if not db_name.startswith('sacco_'):
-        logger.warning(f"Database '{db_name}' is not a SACCO database")
-        return False
-    
     return True
+
+def execute_on_all_sacco_databases(func, *args, **kwargs):
+    """
+    Execute a function on all SACCO databases.
+    
+    Example:
+        def count_members():
+            return Member.objects.count()
+        
+        results = execute_on_all_sacco_databases(count_members)
+    """
+    results = {}
+    sacco_dbs = get_all_sacco_databases()
+    
+    for db in sacco_dbs:
+        try:
+            with DatabaseContext(db):
+                results[db] = func(*args, **kwargs)
+        except Exception as e:
+            logger.error(f"Error on database '{db}': {e}")
+            results[db] = None
+    
+    return results

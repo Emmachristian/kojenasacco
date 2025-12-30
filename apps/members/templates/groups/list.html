@@ -1,0 +1,1234 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block extra_css %}
+<style>
+/* ============================================================================
+   STATISTICS SUMMARY SECTION
+   ============================================================================ */
+
+.stats-summary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.stats-summary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="80" r="3" fill="rgba(255,255,255,0.05)"/><circle cx="40" cy="70" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
+    pointer-events: none;
+}
+
+.stats-card {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    padding: 20px;
+    text-align: center;
+}
+
+.stats-card:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+}
+
+.stats-card h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.stats-card p {
+    margin-bottom: 5px;
+    opacity: 0.9;
+}
+
+.stats-card small {
+    opacity: 0.7;
+}
+
+/* ============================================================================
+   GROUP CARD STYLING
+   ============================================================================ */
+
+.group-card {
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    background: white;
+    overflow: hidden;
+    height: 100%;
+}
+
+.group-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    transform: translateY(-4px);
+    border-color: #667eea;
+}
+
+.group-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 20px;
+    border-bottom: 2px solid #667eea;
+}
+
+.group-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: white;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.group-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #212529;
+    margin: 0 0 5px 0;
+}
+
+.group-type {
+    font-size: 0.875rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.group-body {
+    padding: 20px;
+}
+
+.group-description {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+    min-height: 40px;
+    line-height: 1.5;
+}
+
+.group-stats {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+}
+
+.stat-item {
+    flex: 1;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #667eea;
+    display: block;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.leadership-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.leader-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.leader-item:last-child {
+    margin-bottom: 0;
+}
+
+.leader-icon {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+    margin-right: 10px;
+}
+
+.leader-name {
+    font-weight: 600;
+    color: #333;
+    flex: 1;
+}
+
+.leader-role {
+    font-size: 0.75rem;
+    color: #6c757d;
+    text-transform: uppercase;
+}
+
+.meeting-info {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.meeting-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.meeting-row:last-child {
+    margin-bottom: 0;
+}
+
+.meeting-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.meeting-value {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.group-footer {
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+}
+
+/* ============================================================================
+   BADGES & INDICATORS
+   ============================================================================ */
+
+.type-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-left: 5px;
+}
+
+.type-lending_circle {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.type-savings_group {
+    background-color: #cce5ff;
+    color: #004085;
+    border: 1px solid #b8daff;
+}
+
+.type-committee {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.type-investment_club {
+    background-color: #e7e7ff;
+    color: #4c4cac;
+    border: 1px solid #d5d5f5;
+}
+
+.type-special_interest,
+.type-project_group,
+.type-training_group,
+.type-other {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.active-badge {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid #c3e6cb;
+}
+
+.inactive-badge {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid #f5c6cb;
+}
+
+.full-badge {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid #ffeaa7;
+}
+
+.available-badge {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid #bee5eb;
+}
+
+/* ============================================================================
+   PROGRESS INDICATORS
+   ============================================================================ */
+
+.capacity-indicator {
+    margin-top: 10px;
+}
+
+.capacity-bar {
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.capacity-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.capacity-text {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-top: 5px;
+    text-align: center;
+}
+
+/* ============================================================================
+   EMPTY STATE
+   ============================================================================ */
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+}
+
+.empty-state-icon {
+    font-size: 4rem;
+    color: #dee2e6;
+    margin-bottom: 20px;
+}
+
+.empty-state h5 {
+    color: #495057;
+    margin-bottom: 10px;
+}
+
+/* ============================================================================
+   SEARCH & FILTERS
+   ============================================================================ */
+
+.search-filter-bar {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* ============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================ */
+
+@media (max-width: 768px) {
+    .stats-summary {
+        padding: 15px;
+    }
+    
+    .stats-card {
+        margin-bottom: 10px;
+    }
+    
+    .stats-card h3 {
+        font-size: 1.5rem;
+    }
+    
+    .group-header {
+        padding: 15px;
+    }
+    
+    .group-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 24px;
+    }
+    
+    .group-name {
+        font-size: 1.1rem;
+    }
+    
+    .group-stats {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+
+@media (max-width: 576px) {
+    .group-card {
+        margin-bottom: 15px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="app-page-title">
+    <div class="page-title-wrapper">
+        <div class="page-title-heading">
+            <div class="page-title-icon">
+                <i class="pe-7s-users icon-gradient bg-mean-fruit"></i>
+            </div>
+            <div>
+                Member Groups
+                <div class="page-title-subheading">
+                    Manage lending circles, savings groups, committees, and other member organizations
+                </div>
+            </div>
+        </div>
+        <div class="page-title-actions">
+            <div class="ms-2">
+                <div class="btn-group" role="group">
+                    <a href="{% url 'members:group_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Create New Group
+                    </a>
+
+                    <!-- Export Options -->
+                    <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown">
+                        <i class="fa fa-download me-1"></i> Export
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end">
+                        <a class="dropdown-item" href="#" id="exportExcel">
+                            <i class="fa fa-file-excel me-2 text-success"></i> Export to Excel
+                        </a>
+                        <a class="dropdown-item" href="#" id="exportPdf">
+                            <i class="fa fa-file-pdf me-2 text-danger"></i> Export to PDF
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="#" onclick="window.print()">
+                            <i class="fa fa-print me-2"></i> Print List
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Summary -->
+<div class="stats-summary">
+    <div class="row">
+        <!-- Total Groups -->
+        <div class="col-md-3 col-6 mb-3 mb-md-0">
+            <div class="stats-card">
+                <h3 id="totalGroups">{{ groups.paginator.count|default:0 }}</h3>
+                <p class="mb-0">Total Groups</p>
+                <small>
+                    <i class="fa fa-users me-1"></i>
+                    All groups
+                </small>
+            </div>
+        </div>
+        
+        <!-- Active Groups -->
+        <div class="col-md-3 col-6 mb-3 mb-md-0">
+            <div class="stats-card">
+                <h3 id="activeGroups">0</h3>
+                <p class="mb-0">Active Groups</p>
+                <small>
+                    <i class="fa fa-check-circle me-1"></i>
+                    Currently active
+                </small>
+            </div>
+        </div>
+        
+        <!-- Total Members -->
+        <div class="col-md-3 col-6">
+            <div class="stats-card">
+                <h3 id="totalMembers">0</h3>
+                <p class="mb-0">Total Members</p>
+                <small>
+                    <i class="fa fa-user me-1"></i>
+                    Across all groups
+                </small>
+            </div>
+        </div>
+        
+        <!-- Available Groups -->
+        <div class="col-md-3 col-6">
+            <div class="stats-card">
+                <h3 id="availableGroups">0</h3>
+                <p class="mb-0">Open for Joining</p>
+                <small>
+                    <i class="fa fa-door-open me-1"></i>
+                    Accepting members
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search & Filters -->
+<div class="search-filter-bar">
+    <form id="searchForm" class="row g-3">
+        <div class="col-md-4">
+            <input type="text" name="q" id="searchInput" class="form-control" placeholder="Search groups by name or description...">
+        </div>
+        <div class="col-md-3">
+            <select name="group_type" id="typeFilter" class="form-select">
+                <option value="">All Types</option>
+                <option value="LENDING_CIRCLE">Lending Circle</option>
+                <option value="SAVINGS_GROUP">Savings Group</option>
+                <option value="COMMITTEE">Committee</option>
+                <option value="SPECIAL_INTEREST">Special Interest</option>
+                <option value="PROJECT_GROUP">Project Group</option>
+                <option value="INVESTMENT_CLUB">Investment Club</option>
+                <option value="TRAINING_GROUP">Training Group</option>
+                <option value="OTHER">Other</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="is_active" id="statusFilter" class="form-select">
+                <option value="">All Status</option>
+                <option value="true">Active Only</option>
+                <option value="false">Inactive Only</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="is_full" id="capacityFilter" class="form-select">
+                <option value="">All Capacity</option>
+                <option value="false">Open for Joining</option>
+                <option value="true">Full</option>
+            </select>
+        </div>
+        <div class="col-md-1">
+            <button type="button" class="btn btn-outline-secondary w-100" id="clearFilters" title="Clear Filters">
+                <i class="fa fa-times"></i>
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Groups Grid -->
+<section class="section">
+    <div class="row" id="groupsGrid">
+        {% for group in groups %}
+        <div class="col-lg-4 col-md-6 mb-4 group-item">
+            <div class="group-card">
+                <div class="group-header">
+                    <div class="d-flex align-items-start">
+                        <div class="group-icon me-3">
+                            <i class="fa fa-users"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h5 class="group-name">{{ group.name }}</h5>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <span class="group-type">{{ group.get_group_type_display }}</span>
+                                {% if group.is_active %}
+                                    <span class="active-badge">Active</span>
+                                {% else %}
+                                    <span class="inactive-badge">Inactive</span>
+                                {% endif %}
+                                {% if group.is_full %}
+                                    <span class="full-badge">Full</span>
+                                {% else %}
+                                    <span class="available-badge">Open</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="group-body">
+                    <p class="group-description">
+                        {% if group.description %}
+                            {{ group.description|truncatewords:25 }}
+                        {% else %}
+                            <em class="text-muted">No description provided</em>
+                        {% endif %}
+                    </p>
+                    
+                    <!-- Group Stats -->
+                    <div class="group-stats">
+                        <div class="stat-item">
+                            <span class="stat-value">{{ group.member_count|default:0 }}</span>
+                            <span class="stat-label">Members</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">{{ group.available_slots|default:0 }}</span>
+                            <span class="stat-label">Slots</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">{{ group.group_age_days }}</span>
+                            <span class="stat-label">Days Old</span>
+                        </div>
+                    </div>
+
+                    <!-- Capacity Indicator -->
+                    <div class="capacity-indicator">
+                        <div class="capacity-bar">
+                            {% widthratio group.member_count group.maximum_members 100 as capacity_percent %}
+                            <div class="capacity-fill" style="width: {{ capacity_percent }}%;"></div>
+                        </div>
+                        <div class="capacity-text">
+                            {{ group.member_count }}/{{ group.maximum_members }} members
+                            ({{ capacity_percent }}% capacity)
+                        </div>
+                    </div>
+
+                    <!-- Leadership Section -->
+                    {% if group.group_leader or group.group_secretary or group.group_treasurer %}
+                    <div class="leadership-section">
+                        <div class="mb-2" style="font-size: 0.875rem; font-weight: 600; color: #333;">
+                            <i class="fa fa-crown me-1" style="color: #ffc107;"></i> Leadership
+                        </div>
+                        {% if group.group_leader %}
+                        <div class="leader-item">
+                            <div class="leader-icon">
+                                <i class="fa fa-user-tie"></i>
+                            </div>
+                            <div class="leader-name">{{ group.group_leader.get_full_name|truncatewords:2 }}</div>
+                            <div class="leader-role">Leader</div>
+                        </div>
+                        {% endif %}
+                        {% if group.group_secretary %}
+                        <div class="leader-item">
+                            <div class="leader-icon">
+                                <i class="fa fa-file-signature"></i>
+                            </div>
+                            <div class="leader-name">{{ group.group_secretary.get_full_name|truncatewords:2 }}</div>
+                            <div class="leader-role">Secretary</div>
+                        </div>
+                        {% endif %}
+                        {% if group.group_treasurer %}
+                        <div class="leader-item">
+                            <div class="leader-icon">
+                                <i class="fa fa-money-bill-wave"></i>
+                            </div>
+                            <div class="leader-name">{{ group.group_treasurer.get_full_name|truncatewords:2 }}</div>
+                            <div class="leader-role">Treasurer</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Meeting Info -->
+                    <div class="meeting-info">
+                        <div class="meeting-row">
+                            <span class="meeting-label">
+                                <i class="fa fa-calendar-alt me-1"></i> Frequency:
+                            </span>
+                            <span class="meeting-value">{{ group.get_meeting_frequency_display }}</span>
+                        </div>
+                        {% if group.meeting_day %}
+                        <div class="meeting-row">
+                            <span class="meeting-label">
+                                <i class="fa fa-calendar-day me-1"></i> Day:
+                            </span>
+                            <span class="meeting-value">{{ group.get_meeting_day_display }}</span>
+                        </div>
+                        {% endif %}
+                        {% if group.meeting_time %}
+                        <div class="meeting-row">
+                            <span class="meeting-label">
+                                <i class="fa fa-clock me-1"></i> Time:
+                            </span>
+                            <span class="meeting-value">{{ group.meeting_time|time:"g:i A" }}</span>
+                        </div>
+                        {% endif %}
+                        {% if group.minimum_contribution %}
+                        <div class="meeting-row">
+                            <span class="meeting-label">
+                                <i class="fa fa-coins me-1"></i> Min. Contribution:
+                            </span>
+                            <span class="meeting-value">UGX {{ group.minimum_contribution|floatformat:0|intcomma }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="group-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="fa fa-calendar me-1"></i>
+                            Formed: {{ group.formation_date|date:"M d, Y" }}
+                        </small>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'members:group_detail' group.pk %}" class="btn btn-outline-info" title="View Details">
+                                <i class="fa fa-eye"></i>
+                            </a>
+                            <a href="{% url 'members:group_edit' group.pk %}" class="btn btn-outline-warning" title="Edit">
+                                <i class="fa fa-edit"></i>
+                            </a>
+                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteGroup{{ group.pk }}" title="Delete">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Modal -->
+        <div class="modal fade" id="deleteGroup{{ group.pk }}" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Delete Group</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <i class="fa fa-exclamation-triangle text-warning fa-3x mb-3"></i>
+                        <h5>Are you sure you want to delete "<strong>{{ group.name }}</strong>"?</h5>
+                        
+                        {% if group.member_count > 0 %}
+                            <div class="alert alert-warning mt-3">
+                                <strong>Warning:</strong> This group has {{ group.member_count }} active member(s).
+                                Please ensure all members are removed before deleting this group.
+                            </div>
+                        {% else %}
+                            <p class="text-muted">This action cannot be undone.</p>
+                        {% endif %}
+                    </div>
+                    <form action="{% url 'members:group_delete' group.pk %}" method="post">
+                        {% csrf_token %}
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            {% if group.member_count == 0 %}
+                                <button type="submit" class="btn btn-danger">Delete Group</button>
+                            {% else %}
+                                <button type="button" class="btn btn-danger" disabled>Cannot Delete</button>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fa fa-users"></i>
+                </div>
+                <h5>No Groups Found</h5>
+                <p class="text-muted">Start by creating your first member group to organize lending circles, savings groups, or committees.</p>
+                <a href="{% url 'members:group_create' %}" class="btn btn-primary mt-3">
+                    <i class="fa fa-plus me-2"></i> Create First Group
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if groups.has_other_pages %}
+    <nav class="mb-3" aria-label="Page navigation">
+        <ul class="pagination justify-content-center" id="paginationNav">
+            {% if groups.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ groups.previous_page_number }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% endif %}
+
+            {% for num in groups.paginator.page_range %}
+                {% if groups.number == num %}
+                <li class="page-item active" aria-current="page">
+                    <a class="page-link" href="#">{{ num }}</a>
+                </li>
+                {% elif num > groups.number|add:'-3' and num < groups.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if groups.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ groups.next_page_number }}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    <!-- Results Count -->
+    <div class="text-center text-muted mb-3">
+        Showing {{ groups.start_index }} - {{ groups.end_index }} of {{ groups.paginator.count }} groups
+    </div>
+    {% endif %}
+</section>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+/* ============================================================================
+   MAIN GROUP LIST FUNCTIONALITY
+============================================================================ */
+$(document).ready(function() {
+    let currentPage = 1;
+
+    // ------------------------------------------------------------------------
+    // Calculate and Update Statistics
+    // ------------------------------------------------------------------------
+    function updateStatistics() {
+        let activeCount = 0;
+        let totalMembers = 0;
+        let availableCount = 0;
+
+        $('.group-item').each(function() {
+            const isActive = $(this).find('.active-badge').length > 0;
+            const isAvailable = $(this).find('.available-badge').length > 0;
+            const memberCount = parseInt($(this).find('.stat-value').first().text()) || 0;
+
+            if (isActive) activeCount++;
+            if (isAvailable && isActive) availableCount++;
+            totalMembers += memberCount;
+        });
+
+        $('#activeGroups').text(activeCount);
+        $('#totalMembers').text(totalMembers.toLocaleString());
+        $('#availableGroups').text(availableCount);
+    }
+
+    // ------------------------------------------------------------------------
+    // AJAX Functions - Fetch and Display Groups
+    // ------------------------------------------------------------------------
+    function fetchResults(page = 1) {
+        const formData = $('#searchForm').serialize() + '&page=' + page;
+        
+        $.ajax({
+            url: "{% url 'members:group_search' %}",
+            data: formData,
+            dataType: 'json',
+            success: function(data) {
+                renderGroupsGrid(data);
+                updatePaginationAjax(data);
+                updateStatisticsAjax(data.stats);
+                currentPage = data.current_page;
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX Error:', error);
+                $('#groupsGrid').html(
+                    `<div class="col-12">
+                        <div class="alert alert-danger text-center">
+                            Error loading groups. Please try again.
+                        </div>
+                    </div>`
+                );
+            }
+        });
+    }
+
+    // ------------------------------------------------------------------------
+    // Statistics Update Function (AJAX)
+    // ------------------------------------------------------------------------
+    function updateStatisticsAjax(stats) {
+        $('#totalGroups').text(stats.total_groups || 0);
+        $('#activeGroups').text(stats.active_groups || 0);
+        $('#totalMembers').text((stats.membership_statistics?.total_active_memberships || 0).toLocaleString());
+        $('#availableGroups').text(stats.available_groups || 0);
+    }
+
+    function renderGroupsGrid(data) {
+        let html = '';
+        
+        if (data.groups.length > 0) {
+            data.groups.forEach(function(group) {
+                html += buildGroupCard(group);
+            });
+        } else {
+            html = `
+                <div class="col-12">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="fa fa-users"></i>
+                        </div>
+                        <h5>No Groups Found</h5>
+                        <p class="text-muted">Try adjusting your search filters.</p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        $('#groupsGrid').html(html);
+    }
+
+    function buildGroupCard(group) {
+        const detailUrl = "{% url 'members:group_detail' '00000000-0000-0000-0000-000000000000' %}".replace('00000000-0000-0000-0000-000000000000', group.id);
+        const editUrl = "{% url 'members:group_edit' '00000000-0000-0000-0000-000000000000' %}".replace('00000000-0000-0000-0000-000000000000', group.id);
+        const deleteUrl = "{% url 'members:group_delete_modal' '00000000-0000-0000-0000-000000000000' %}".replace('00000000-0000-0000-0000-000000000000', group.id);
+        
+        const statusBadge = group.is_active 
+            ? '<span class="active-badge">Active</span>'
+            : '<span class="inactive-badge">Inactive</span>';
+        
+        const capacityBadge = group.is_full
+            ? '<span class="full-badge">Full</span>'
+            : '<span class="available-badge">Open</span>';
+        
+        const description = group.description
+            ? group.description
+            : '<em class="text-muted">No description provided</em>';
+        
+        const capacityPercent = group.maximum_members > 0 
+            ? Math.round((group.member_count / group.maximum_members) * 100)
+            : 0;
+
+        let leadershipHtml = '';
+        if (group.leader_name || group.secretary_name || group.treasurer_name) {
+            leadershipHtml = '<div class="leadership-section"><div class="mb-2" style="font-size: 0.875rem; font-weight: 600; color: #333;"><i class="fa fa-crown me-1" style="color: #ffc107;"></i> Leadership</div>';
+            
+            if (group.leader_name) {
+                leadershipHtml += `
+                    <div class="leader-item">
+                        <div class="leader-icon"><i class="fa fa-user-tie"></i></div>
+                        <div class="leader-name">${group.leader_name}</div>
+                        <div class="leader-role">Leader</div>
+                    </div>`;
+            }
+            if (group.secretary_name) {
+                leadershipHtml += `
+                    <div class="leader-item">
+                        <div class="leader-icon"><i class="fa fa-file-signature"></i></div>
+                        <div class="leader-name">${group.secretary_name}</div>
+                        <div class="leader-role">Secretary</div>
+                    </div>`;
+            }
+            if (group.treasurer_name) {
+                leadershipHtml += `
+                    <div class="leader-item">
+                        <div class="leader-icon"><i class="fa fa-money-bill-wave"></i></div>
+                        <div class="leader-name">${group.treasurer_name}</div>
+                        <div class="leader-role">Treasurer</div>
+                    </div>`;
+            }
+            leadershipHtml += '</div>';
+        }
+
+        const meetingInfo = `
+            <div class="meeting-info">
+                <div class="meeting-row">
+                    <span class="meeting-label"><i class="fa fa-calendar-alt me-1"></i> Frequency:</span>
+                    <span class="meeting-value">${group.meeting_frequency_display}</span>
+                </div>
+                ${group.meeting_day ? `
+                <div class="meeting-row">
+                    <span class="meeting-label"><i class="fa fa-calendar-day me-1"></i> Day:</span>
+                    <span class="meeting-value">${group.meeting_day}</span>
+                </div>` : ''}
+                ${group.meeting_time ? `
+                <div class="meeting-row">
+                    <span class="meeting-label"><i class="fa fa-clock me-1"></i> Time:</span>
+                    <span class="meeting-value">${group.meeting_time}</span>
+                </div>` : ''}
+                ${group.minimum_contribution > 0 ? `
+                <div class="meeting-row">
+                    <span class="meeting-label"><i class="fa fa-coins me-1"></i> Min. Contribution:</span>
+                    <span class="meeting-value">UGX ${parseInt(group.minimum_contribution).toLocaleString()}</span>
+                </div>` : ''}
+            </div>`;
+
+        const deleteWarning = group.member_count > 0
+            ? `<div class="alert alert-warning mt-3">
+                <strong>Warning:</strong> This group has ${group.member_count} active member(s).
+                Please ensure all members are removed before deleting.
+            </div>`
+            : '<p class="text-muted">This action cannot be undone.</p>';
+        
+        const deleteButton = group.member_count == 0
+            ? '<button type="submit" class="btn btn-danger">Delete Group</button>'
+            : '<button type="button" class="btn btn-danger" disabled>Cannot Delete</button>';
+
+        return `
+            <div class="col-lg-4 col-md-6 mb-4 group-item">
+                <div class="group-card">
+                    <div class="group-header">
+                        <div class="d-flex align-items-start">
+                            <div class="group-icon me-3">
+                                <i class="fa fa-users"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h5 class="group-name">${group.name}</h5>
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <span class="group-type">${group.group_type_display}</span>
+                                    ${statusBadge}
+                                    ${capacityBadge}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="group-body">
+                        <p class="group-description">${description}</p>
+                        
+                        <div class="group-stats">
+                            <div class="stat-item">
+                                <span class="stat-value">${group.member_count}</span>
+                                <span class="stat-label">Members</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">${group.available_slots}</span>
+                                <span class="stat-label">Slots</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">${group.group_age_days}</span>
+                                <span class="stat-label">Days Old</span>
+                            </div>
+                        </div>
+
+                        <div class="capacity-indicator">
+                            <div class="capacity-bar">
+                                <div class="capacity-fill" style="width: ${capacityPercent}%;"></div>
+                            </div>
+                            <div class="capacity-text">
+                                ${group.member_count}/${group.maximum_members} members
+                                (${capacityPercent}% capacity)
+                            </div>
+                        </div>
+
+                        ${leadershipHtml}
+                        ${meetingInfo}
+                    </div>
+                    
+                    <div class="group-footer">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fa fa-calendar me-1"></i>
+                                Formed: ${group.formation_date}
+                            </small>
+                            <div class="btn-group btn-group-sm">
+                                <a href="${detailUrl}" class="btn btn-outline-info" title="View Details">
+                                    <i class="fa fa-eye"></i>
+                                </a>
+                                <a href="${editUrl}" class="btn btn-outline-warning" title="Edit">
+                                    <i class="fa fa-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteGrp${group.id}" title="Delete">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Delete Modal -->
+                <div class="modal fade" id="deleteGrp${group.id}" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Delete Group</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                                <i class="fa fa-exclamation-triangle text-warning fa-3x mb-3"></i>
+                                <h5>Are you sure you want to delete "<strong>${group.name}</strong>"?</h5>
+                                ${deleteWarning}
+                            </div>
+                            <form action="${deleteUrl}" method="post">
+                                <input type="hidden" name="csrfmiddlewaretoken" value="${getCookie('csrftoken')}">
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    ${deleteButton}
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // ------------------------------------------------------------------------
+    // Pagination Functions (AJAX)
+    // ------------------------------------------------------------------------
+    function updatePaginationAjax(data) {
+        if (data.total_pages <= 1) {
+            $('#paginationNav').parent().hide();
+            return;
+        }
+
+        $('#paginationNav').parent().show();
+        $('#paginationNav').html(buildPaginationHtml(data));
+        
+        $('.text-center.text-muted.mb-3').html(
+            `Showing ${data.start_index} - ${data.end_index} of ${data.total_count} groups`
+        );
+    }
+
+    function buildPaginationHtml(data) {
+        let html = '';
+
+        // Previous button
+        if (data.has_previous) {
+            html += `
+                <li class="page-item">
+                    <a class="page-link pagination-link" href="#" data-page="${data.current_page - 1}">&laquo;</a>
+                </li>`;
+        } else {
+            html += `
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" tabindex="-1">&laquo;</a>
+                </li>`;
+        }
+
+        // Page numbers
+        for (let i = 1; i <= data.total_pages; i++) {
+            if (i === data.current_page) {
+                html += `
+                    <li class="page-item active">
+                        <a class="page-link" href="#">${i}</a>
+                    </li>`;
+            } else if (i > data.current_page - 3 && i < data.current_page + 3) {
+                html += `
+                    <li class="page-item">
+                        <a class="page-link pagination-link" href="#" data-page="${i}">${i}</a>
+                    </li>`;
+            }
+        }
+
+        // Next button
+        if (data.has_next) {
+            html += `
+                <li class="page-item">
+                    <a class="page-link pagination-link" href="#" data-page="${data.current_page + 1}">&raquo;</a>
+                </li>`;
+        } else {
+            html += `
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" tabindex="-1">&raquo;</a>
+                </li>`;
+        }
+
+        return html;
+    }
+
+    // ------------------------------------------------------------------------
+    // Helper Functions
+    // ------------------------------------------------------------------------
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // ------------------------------------------------------------------------
+    // Event Handlers
+    // ------------------------------------------------------------------------
+    
+    // Search and filter changes
+    $('#searchInput, #typeFilter, #statusFilter, #capacityFilter').on('input change', function() {
+        fetchResults(1);
+    });
+
+    // Clear filters
+    $('#clearFilters').on('click', function() {
+        $('#searchForm')[0].reset();
+        fetchResults(1);
+    });
+
+    // Pagination clicks (AJAX)
+    $(document).on('click', '.pagination-link', function(e) {
+        e.preventDefault();
+        const page = $(this).data('page');
+        fetchResults(page);
+        
+        // Scroll to top of results
+        $('html, body').animate({
+            scrollTop: $("#groupsGrid").offset().top - 100
+        }, 300);
+    });
+
+    // Export handlers
+    $('#exportExcel').on('click', function(e) {
+        e.preventDefault();
+        alert('Excel export functionality - to be implemented');
+    });
+
+    $('#exportPdf').on('click', function(e) {
+        e.preventDefault();
+        alert('PDF export functionality - to be implemented');
+    });
+
+    // ------------------------------------------------------------------------
+    // Initialize
+    // ------------------------------------------------------------------------
+    updateStatistics();
+    
+    console.log('Group List JavaScript loaded successfully');
+});
+</script>
+{% endblock %}

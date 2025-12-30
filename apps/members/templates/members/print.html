@@ -1,0 +1,432 @@
+{% load humanize %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Members Directory - Print View</title>
+    <style>
+        /* ============================================================================
+           PRINT STYLES
+        ============================================================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Landscape orientation */
+        {% if landscape %}
+        @page {
+            size: landscape;
+            margin: 1cm;
+        }
+        {% else %}
+        @page {
+            margin: 1.5cm;
+        }
+        {% endif %}
+
+        /* Header Section */
+        .print-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .print-header h1 {
+            color: #667eea;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .print-header .subtitle {
+            color: #6c757d;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .print-info {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .print-info-item {
+            text-align: center;
+        }
+
+        .print-info-item label {
+            display: block;
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .print-info-item span {
+            display: block;
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        /* Statistics Summary */
+        .stats-summary {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+        }
+
+        .stat-card label {
+            display: block;
+            font-size: 11px;
+            color: #6c757d;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .stat-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            font-size: {% if landscape %}11px{% else %}13px{% endif %};
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        th {
+            padding: 10px 6px;
+            text-align: left;
+            font-weight: 600;
+            font-size: {% if landscape %}10px{% else %}12px{% endif %};
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 8px 6px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-badge.active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-badge.suspended {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-badge.dormant {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+
+        .status-badge.blacklisted {
+            background: #d6d8db;
+            color: #1d2124;
+        }
+
+        /* Category Badge */
+        .category-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 8px;
+            font-size: 10px;
+            background: #007bff;
+            color: white;
+        }
+
+        /* KYC Indicator */
+        .kyc-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 4px;
+        }
+
+        .kyc-indicator.verified {
+            background: #28a745;
+        }
+
+        .kyc-indicator.pending {
+            background: #ffc107;
+        }
+
+        .kyc-indicator.rejected {
+            background: #dc3545;
+        }
+
+        /* Footer */
+        .print-footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #dee2e6;
+            text-align: center;
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        /* Print Media Query */
+        @media print {
+            body {
+                padding: 10px;
+            }
+
+            .print-header {
+                page-break-after: avoid;
+            }
+
+            table {
+                page-break-inside: auto;
+            }
+
+            tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }
+
+            thead {
+                display: table-header-group;
+            }
+
+            tfoot {
+                display: table-footer-group;
+            }
+
+            /* Remove box shadows for cleaner print */
+            table, .stat-card {
+                box-shadow: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="print-header">
+        <h1>Members Directory</h1>
+        <div class="subtitle">Complete member listing with details</div>
+    </div>
+
+    <!-- Print Information -->
+    <div class="print-info">
+        <div class="print-info-item">
+            <label>Generated Date</label>
+            <span>{{ now|date:"F d, Y" }}</span>
+        </div>
+        <div class="print-info-item">
+            <label>Generated Time</label>
+            <span>{{ now|date:"h:i A" }}</span>
+        </div>
+        <div class="print-info-item">
+            <label>Total Members</label>
+            <span>{{ members.count }}</span>
+        </div>
+        <div class="print-info-item">
+            <label>Generated By</label>
+            <span>{{ request.user.get_full_name|default:request.user.username }}</span>
+        </div>
+    </div>
+
+    <!-- Statistics Summary -->
+    {% if stats %}
+    <div class="stats-summary">
+        <div class="stat-card">
+            <label>Total Members</label>
+            <div class="value">{{ stats.total|default:0 }}</div>
+        </div>
+        <div class="stat-card">
+            <label>Active Members</label>
+            <div class="value">{{ stats.active|default:0 }}</div>
+        </div>
+        <div class="stat-card">
+            <label>Pending Approval</label>
+            <div class="value">{{ stats.pending_approval|default:0 }}</div>
+        </div>
+        <div class="stat-card">
+            <label>Avg Credit Score</label>
+            <div class="value">{{ stats.avg_credit_score|default:0|floatformat:0 }}</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Members Table with Dynamic Columns -->
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                {% for field_name in selected_field_names %}
+                    <th>{{ field_name }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for member in members %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                
+                {% for field in selected_fields %}
+                    <td>
+                        {% if field == 'member_number' %}
+                            <strong>{{ member.member_number }}</strong>
+                        
+                        {% elif field == 'full_name' %}
+                            {{ member.get_full_name }}
+                        
+                        {% elif field == 'id_number' %}
+                            {{ member.id_number|default:"N/A" }}
+                        
+                        {% elif field == 'date_of_birth' %}
+                            {{ member.date_of_birth|date:"M d, Y"|default:"N/A" }}
+                        
+                        {% elif field == 'gender' %}
+                            {{ member.get_gender_display }}
+                        
+                        {% elif field == 'nationality' %}
+                            {{ member.nationality|default:"N/A" }}
+                        
+                        {% elif field == 'phone_primary' %}
+                            {{ member.phone_primary|default:"N/A" }}
+                        
+                        {% elif field == 'phone_secondary' %}
+                            {{ member.phone_secondary|default:"N/A" }}
+                        
+                        {% elif field == 'personal_email' %}
+                            {{ member.personal_email|default:"N/A" }}
+                        
+                        {% elif field == 'postal_address' %}
+                            {{ member.postal_address|default:"N/A" }}
+                        
+                        {% elif field == 'physical_address' %}
+                            {{ member.physical_address|default:"N/A" }}
+                        
+                        {% elif field == 'member_category' %}
+                            <span class="category-badge">{{ member.get_member_category_display }}</span>
+                        
+                        {% elif field == 'membership_plan' %}
+                            {{ member.get_membership_plan_display }}
+                        
+                        {% elif field == 'status' %}
+                            {% if member.status == 'ACTIVE' %}
+                                <span class="status-badge active">Active</span>
+                            {% elif member.status == 'PENDING_APPROVAL' %}
+                                <span class="status-badge pending">Pending</span>
+                            {% elif member.status == 'SUSPENDED' %}
+                                <span class="status-badge suspended">Suspended</span>
+                            {% elif member.status == 'DORMANT' %}
+                                <span class="status-badge dormant">Dormant</span>
+                            {% elif member.status == 'BLACKLISTED' %}
+                                <span class="status-badge blacklisted">Blacklisted</span>
+                            {% else %}
+                                <span class="status-badge">{{ member.get_status_display }}</span>
+                            {% endif %}
+                        
+                        {% elif field == 'membership_date' %}
+                            {{ member.membership_date|date:"M d, Y"|default:"N/A" }}
+                        
+                        {% elif field == 'branch' %}
+                            {{ member.branch.name|default:"N/A" }}
+                        
+                        {% elif field == 'credit_score' %}
+                            <strong>{{ member.credit_score }}</strong>/1000
+                        
+                        {% elif field == 'kyc_status' %}
+                            <span class="kyc-indicator {% if member.kyc_status == 'VERIFIED' %}verified{% elif member.kyc_status == 'PENDING' %}pending{% else %}rejected{% endif %}"></span>
+                            {{ member.get_kyc_status_display|truncatewords:1 }}
+                        
+                        {% elif field == 'risk_rating' %}
+                            {{ member.get_risk_rating_display }}
+                        
+                        {% elif field == 'monthly_income' %}
+                            {% if member.monthly_income %}
+                                UGX {{ member.monthly_income|floatformat:0|intcomma }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        
+                        {% elif field == 'employment_status' %}
+                            {{ member.get_employment_status_display }}
+                        
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                {% endfor %}
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="{{ selected_fields|length|add:1 }}" style="text-align: center; padding: 40px; color: #6c757d;">
+                    No members found.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Footer -->
+    <div class="print-footer">
+        <p><strong>SACCO Management System</strong></p>
+        <p>This document contains {{ members.count }} member(s) as of {{ now|date:"F d, Y h:i A" }}</p>
+        <p style="margin-top: 10px; font-size: 11px;">
+            <em>This is a computer-generated document. No signature is required.</em>
+        </p>
+    </div>
+</body>
+</html>

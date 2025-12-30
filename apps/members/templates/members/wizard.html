@@ -1,0 +1,1076 @@
+{% extends "base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block extra_css %}
+
+<style>
+    .required-field::after {
+        content: " *";
+        color: red;
+    }
+    .step-content {
+        min-height: 400px;
+        padding: 20px;
+    }
+    .form-errors {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+    }
+    .review-section {
+        margin-bottom: 25px;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+    }
+    .review-section h5 {
+        margin-bottom: 15px;
+        color: #495057;
+        border-bottom: 2px solid #dee2e6;
+        padding-bottom: 10px;
+    }
+    .review-item {
+        display: flex;
+        padding: 8px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .review-item:last-child {
+        border-bottom: none;
+    }
+    .review-label {
+        font-weight: 600;
+        min-width: 200px;
+        color: #6c757d;
+    }
+    .review-value {
+        flex: 1;
+        color: #212529;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="app-page-title">
+    <div class="page-title-wrapper">
+        <div class="page-title-heading">
+            <div class="page-title-icon">
+                <i class="pe-7s-users icon-gradient bg-happy-itmeo"></i>
+            </div>
+            <div>
+                Member Registration
+                <div class="page-title-subheading">Complete the member registration process in six simple steps</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-9 col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <form method="post" id="wizard-form" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+                    {{ wizard.management_form }}
+                    
+                    <div id="smartwizard">
+                        <ul class="forms-wizard">
+                            <li>
+                                <a href="#step-basic-info">
+                                    <em>1</em>
+                                    <span>Personal Information</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#step-contact-info">
+                                    <em>2</em>
+                                    <span>Contact & Address</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#step-employment-info">
+                                    <em>3</em>
+                                    <span>Employment & Income</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#step-membership-info">
+                                    <em>4</em>
+                                    <span>Membership Details</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#step-next-of-kin">
+                                    <em>5</em>
+                                    <span>Next of Kin</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#step-confirmation">
+                                    <em>6</em>
+                                    <span>Review & Confirm</span>
+                                </a>
+                            </li>
+                        </ul>
+                        
+                        <div class="form-wizard-content">
+                            {% if wizard.form.errors or wizard.form.non_field_errors %}
+                            <div class="form-errors">
+                                <strong>Please correct the following errors:</strong>
+                                <ul>
+                                    {% for field in wizard.form %}
+                                        {% for error in field.errors %}
+                                            <li>{{ field.label }}: {{ error }}</li>
+                                        {% endfor %}
+                                    {% endfor %}
+                                    {% for error in wizard.form.non_field_errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+
+                            <!-- STEP 1: Basic Information -->
+                            <div id="step-basic-info" class="step-content">
+                                {% if wizard.steps.current == 'basic_info' %}
+                                    <h4 class="mb-4">Personal Information</h4>
+                                    <div class="row">
+                                        <div class="col-md-2">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label {% if wizard.form.title.field.required %}required-field{% endif %}">{{ wizard.form.title.label }}</label>
+                                                {% render_field wizard.form.title class="form-control" %}
+                                                {% if wizard.form.title.errors %}
+                                                    <div class="text-danger">{{ wizard.form.title.errors.0 }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label {% if wizard.form.first_name.field.required %}required-field{% endif %}">{{ wizard.form.first_name.label }}</label>
+                                                {% render_field wizard.form.first_name class="form-control" %}
+                                                {% if wizard.form.first_name.errors %}
+                                                    <div class="text-danger">{{ wizard.form.first_name.errors.0 }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label">{{ wizard.form.middle_name.label }}</label>
+                                                {% render_field wizard.form.middle_name class="form-control" %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label {% if wizard.form.last_name.field.required %}required-field{% endif %}">{{ wizard.form.last_name.label }}</label>
+                                                {% render_field wizard.form.last_name class="form-control" %}
+                                                {% if wizard.form.last_name.errors %}
+                                                    <div class="text-danger">{{ wizard.form.last_name.errors.0 }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label {% if wizard.form.id_type.field.required %}required-field{% endif %}">{{ wizard.form.id_type.label }}</label>
+                                                {% render_field wizard.form.id_type class="form-control" %}
+                                                {% if wizard.form.id_type.errors %}
+                                                    <div class="text-danger">{{ wizard.form.id_type.errors.0 }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label {% if wizard.form.id_number.field.required %}required-field{% endif %}">{{ wizard.form.id_number.label }}</label>
+                                                {% render_field wizard.form.id_number class="form-control" %}
+                                                {% if wizard.form.id_number.errors %}
+                                                    <div class="text-danger">{{ wizard.form.id_number.errors.0 }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label {% if wizard.form.date_of_birth.field.required %}required-field{% endif %}">{{ wizard.form.date_of_birth.label }}</label>
+                                                {% render_field wizard.form.date_of_birth class="form-control" %}
+                                                {% if wizard.form.date_of_birth.errors %}
+                                                    <div class="text-danger">{{ wizard.form.date_of_birth.errors.0 }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label">{{ wizard.form.place_of_birth.label }}</label>
+                                                {% render_field wizard.form.place_of_birth class="form-control" %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label {% if wizard.form.gender.field.required %}required-field{% endif %}">{{ wizard.form.gender.label }}</label>
+                                                <div>
+                                                    {% for radio in wizard.form.gender %}
+                                                        <div class="form-check form-check-inline">
+                                                            {{ radio.tag }}
+                                                            <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                                                {{ radio.choice_label }}
+                                                            </label>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                                {% if wizard.form.gender.errors %}
+                                                    <div class="text-danger">{{ wizard.form.gender.errors.0 }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label {% if wizard.form.marital_status.field.required %}required-field{% endif %}">{{ wizard.form.marital_status.label }}</label>
+                                                {% render_field wizard.form.marital_status class="form-control" %}
+                                                {% if wizard.form.marital_status.errors %}
+                                                    <div class="text-danger">{{ wizard.form.marital_status.errors.0 }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label">{{ wizard.form.nationality.label }}</label>
+                                                {% render_field wizard.form.nationality class="form-control" %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label">{{ wizard.form.religious_affiliation.label }}</label>
+                                                {% render_field wizard.form.religious_affiliation class="form-control" %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- STEP 2: Contact Information -->
+                            <div id="step-contact-info" class="step-content">
+                                {% if wizard.steps.current == 'contact_info' %}
+                                    <h4 class="mb-4">Contact & Address Information</h4>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label">{{ wizard.form.personal_email.label }}</label>
+                                                {% render_field wizard.form.personal_email class="form-control" %}
+                                                {% if wizard.form.personal_email.errors %}
+                                                    <div class="text-danger">{{ wizard.form.personal_email.errors.0 }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label {% if wizard.form.phone_primary.field.required %}required-field{% endif %}">{{ wizard.form.phone_primary.label }}</label>
+                                                {% render_field wizard.form.phone_primary class="form-control" %}
+                                                {% if wizard.form.phone_primary.errors %}
+                                                    <div class="text-danger">{{ wizard.form.phone_primary.errors.0 }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="position-relative mb-3">
+                                        <label class="form-label {% if wizard.form.physical_address.field.required %}required-field{% endif %}">{{ wizard.form.physical_address.label }}</label>
+                                        {% render_field wizard.form.physical_address class="form-control" rows="3" %}
+                                        {% if wizard.form.physical_address.errors %}
+                                            <div class="text-danger">{{ wizard.form.physical_address.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label">{{ wizard.form.postal_address.label }}</label>
+                                                {% render_field wizard.form.postal_address class="form-control" %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label">{{ wizard.form.postal_code.label }}</label>
+                                                {% render_field wizard.form.postal_code class="form-control" %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label">{{ wizard.form.city.label }}</label>
+                                                {% render_field wizard.form.city class="form-control" %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label">{{ wizard.form.state_province.label }}</label>
+                                                {% render_field wizard.form.state_province class="form-control" %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label {% if wizard.form.country.field.required %}required-field{% endif %}">{{ wizard.form.country.label }}</label>
+                                                {% render_field wizard.form.country class="form-control" %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- STEP 3: Employment Information -->
+                            <div id="step-employment-info" class="step-content">
+                                {% if wizard.steps.current == 'employment_info' %}
+                                    <h4 class="mb-4">Employment & Income Information</h4>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label {% if wizard.form.employment_status.field.required %}required-field{% endif %}">{{ wizard.form.employment_status.label }}</label>
+                                                {% render_field wizard.form.employment_status class="form-control" %}
+                                                {% if wizard.form.employment_status.errors %}
+                                                    <div class="text-danger">{{ wizard.form.employment_status.errors.0 }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label">{{ wizard.form.occupation.label }}</label>
+                                                {% render_field wizard.form.occupation class="form-control" %}
+                                                {% if wizard.form.occupation.errors %}
+                                                    <div class="text-danger">{{ wizard.form.occupation.errors.0 }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label">{{ wizard.form.employer.label }}</label>
+                                                {% render_field wizard.form.employer class="form-control" %}
+                                                {% if wizard.form.employer.errors %}
+                                                    <div class="text-danger">{{ wizard.form.employer.errors.0 }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label">{{ wizard.form.monthly_income.label }}</label>
+                                                {% render_field wizard.form.monthly_income class="form-control" %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="position-relative mb-3">
+                                        <label class="form-label">{{ wizard.form.employer_address.label }}</label>
+                                        {% render_field wizard.form.employer_address class="form-control" rows="2" %}
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label">{{ wizard.form.income_source.label }}</label>
+                                                {% render_field wizard.form.income_source class="form-control" %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="position-relative mb-3">
+                                        <label class="form-label">{{ wizard.form.other_income_sources.label }}</label>
+                                        {% render_field wizard.form.other_income_sources class="form-control" rows="2" %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- STEP 4: Membership Information -->
+                            <div id="step-membership-info" class="step-content">
+                                {% if wizard.steps.current == 'membership_info' %}
+                                    <h4 class="mb-4">Membership Details</h4>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label {% if wizard.form.member_category.field.required %}required-field{% endif %}">{{ wizard.form.member_category.label }}</label>
+                                                {% render_field wizard.form.member_category class="form-control" %}
+                                                {% if wizard.form.member_category.errors %}
+                                                    <div class="text-danger">{{ wizard.form.member_category.errors.0 }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label {% if wizard.form.membership_plan.field.required %}required-field{% endif %}">{{ wizard.form.membership_plan.label }}</label>
+                                                {% render_field wizard.form.membership_plan class="form-control" %}
+                                                {% if wizard.form.membership_plan.errors %}
+                                                    <div class="text-danger">{{ wizard.form.membership_plan.errors.0 }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label {% if wizard.form.membership_date.field.required %}required-field{% endif %}">{{ wizard.form.membership_date.label }}</label>
+                                                {% render_field wizard.form.membership_date class="form-control" %}
+                                                {% if wizard.form.membership_date.errors %}
+                                                    <div class="text-danger">{{ wizard.form.membership_date.errors.0 }}</div>
+                                                {% endif %}
+                                                <small class="form-text text-muted">{{ wizard.form.membership_date.help_text }}</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label">{{ wizard.form.membership_application_date.label }}</label>
+                                                {% render_field wizard.form.membership_application_date class="form-control" %}
+                                                <small class="form-text text-muted">{{ wizard.form.membership_application_date.help_text }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label {% if wizard.form.status.field.required %}required-field{% endif %}">{{ wizard.form.status.label }}</label>
+                                                {% render_field wizard.form.status class="form-control" %}
+                                                {% if wizard.form.status.errors %}
+                                                    <div class="text-danger">{{ wizard.form.status.errors.0 }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label">{{ wizard.form.tax_id.label }}</label>
+                                                {% render_field wizard.form.tax_id class="form-control" %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- STEP 5: Next of Kin -->
+                            <div id="step-next-of-kin" class="step-content">
+                                {% if wizard.steps.current == 'next_of_kin' %}
+                                    <h4 class="mb-4">Next of Kin Information</h4>
+                                    
+                                    <div class="position-relative mb-4">
+                                        <label class="form-label {% if wizard.form.nok_option.field.required %}required-field{% endif %}">{{ wizard.form.nok_option.label }}</label>
+                                        <div>
+                                            {% for radio in wizard.form.nok_option %}
+                                                <div class="form-check">
+                                                    {{ radio.tag }}
+                                                    <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                                        {{ radio.choice_label }}
+                                                    </label>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                        {% if wizard.form.nok_option.errors %}
+                                            <div class="text-danger">{{ wizard.form.nok_option.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div id="nok-fields" style="display: none;">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="position-relative mb-3">
+                                                    <label class="form-label">{{ wizard.form.nok_name.label }}</label>
+                                                    {% render_field wizard.form.nok_name class="form-control" %}
+                                                    {% if wizard.form.nok_name.errors %}
+                                                        <div class="text-danger">{{ wizard.form.nok_name.errors.0 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="position-relative mb-3">
+                                                    <label class="form-label">{{ wizard.form.nok_relation.label }}</label>
+                                                    {% render_field wizard.form.nok_relation class="form-control" %}
+                                                    {% if wizard.form.nok_relation.errors %}
+                                                        <div class="text-danger">{{ wizard.form.nok_relation.errors.0 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="position-relative mb-3">
+                                                    <label class="form-label">{{ wizard.form.nok_contact.label }}</label>
+                                                    {% render_field wizard.form.nok_contact class="form-control" %}
+                                                    {% if wizard.form.nok_contact.errors %}
+                                                        <div class="text-danger">{{ wizard.form.nok_contact.errors.0 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="position-relative mb-3">
+                                                    <label class="form-label">{{ wizard.form.nok_email.label }}</label>
+                                                    {% render_field wizard.form.nok_email class="form-control" %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="position-relative mb-3">
+                                            <label class="form-label">{{ wizard.form.nok_address.label }}</label>
+                                            {% render_field wizard.form.nok_address class="form-control" rows="2" %}
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="position-relative mb-3">
+                                                    <label class="form-label">{{ wizard.form.nok_id_number.label }}</label>
+                                                    {% render_field wizard.form.nok_id_number class="form-control" %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="position-relative mb-3">
+                                            <div class="form-check">
+                                                {% render_field wizard.form.nok_is_emergency_contact class="form-check-input" %}
+                                                <label class="form-check-label" for="{{ wizard.form.nok_is_emergency_contact.id_for_label }}">
+                                                    {{ wizard.form.nok_is_emergency_contact.label }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- STEP 6: Confirmation -->
+                            <div id="step-confirmation" class="step-content">
+                                {% if wizard.steps.current == 'confirmation' %}
+                                    <h4 class="mb-4">Review & Confirmation</h4>
+                                    
+                                    <!-- Basic Information Review -->
+                                    {% if basic_data %}
+                                    <div class="review-section">
+                                        <h5><i class="pe-7s-user"></i> Personal Information</h5>
+                                        <div class="review-item">
+                                            <div class="review-label">Full Name:</div>
+                                            <div class="review-value">
+                                                {{ basic_data.title|default:"" }} 
+                                                {{ basic_data.first_name }} 
+                                                {% if basic_data.middle_name %}{{ basic_data.middle_name }}{% endif %} 
+                                                {{ basic_data.last_name }}
+                                            </div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">ID Type:</div>
+                                            <div class="review-value">
+                                                {% if basic_data.id_type == 'NATIONAL_ID' %}National ID
+                                                {% elif basic_data.id_type == 'PASSPORT' %}Passport
+                                                {% elif basic_data.id_type == 'DRIVING_PERMIT' %}Driving Permit
+                                                {% elif basic_data.id_type == 'OTHER' %}Other
+                                                {% else %}-------
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">ID Number:</div>
+                                            <div class="review-value">{{ basic_data.id_number|default:"-------" }}</div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Date of Birth:</div>
+                                            <div class="review-value">{{ basic_data.date_of_birth|date:"M d, Y"|default:"-------" }}</div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Place of Birth:</div>
+                                            <div class="review-value">{{ basic_data.place_of_birth|default:"-------" }}</div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Gender:</div>
+                                            <div class="review-value">
+                                                {% if basic_data.gender == 'M' %}Male
+                                                {% elif basic_data.gender == 'F' %}Female
+                                                {% elif basic_data.gender == 'O' %}Other
+                                                {% else %}-------
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Marital Status:</div>
+                                            <div class="review-value">
+                                                {% if basic_data.marital_status == 'SINGLE' %}Single
+                                                {% elif basic_data.marital_status == 'MARRIED' %}Married
+                                                {% elif basic_data.marital_status == 'DIVORCED' %}Divorced
+                                                {% elif basic_data.marital_status == 'WIDOWED' %}Widowed
+                                                {% elif basic_data.marital_status == 'SEPARATED' %}Separated
+                                                {% else %}-------
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Nationality:</div>
+                                            <div class="review-value">{{ basic_data.nationality|default:"-------" }}</div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Religious Affiliation:</div>
+                                            <div class="review-value">{{ basic_data.religious_affiliation|default:"-------" }}</div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Contact Information Review -->
+                                    {% if contact_data %}
+                                    <div class="review-section">
+                                        <h5><i class="pe-7s-call"></i> Contact Information</h5>
+                                        <div class="review-item">
+                                            <div class="review-label">Email:</div>
+                                            <div class="review-value">{{ contact_data.personal_email|default:"-------" }}</div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Phone:</div>
+                                            <div class="review-value">{{ contact_data.phone_primary|default:"-------" }}</div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Physical Address:</div>
+                                            <div class="review-value">{{ contact_data.physical_address|default:"-------" }}</div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Postal Address:</div>
+                                            <div class="review-value">{{ contact_data.postal_address|default:"-------" }}</div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Postal Code:</div>
+                                            <div class="review-value">{{ contact_data.postal_code|default:"-------" }}</div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">City:</div>
+                                            <div class="review-value">{{ contact_data.city|default:"-------" }}</div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">State/Province:</div>
+                                            <div class="review-value">{{ contact_data.state_province|default:"-------" }}</div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Country:</div>
+                                            <div class="review-value">{{ contact_data.country|default:"-------" }}</div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Employment Information Review -->
+                                    {% if employment_data %}
+                                    <div class="review-section">
+                                        <h5><i class="pe-7s-portfolio"></i> Employment Information</h5>
+                                        <div class="review-item">
+                                            <div class="review-label">Employment Status:</div>
+                                            <div class="review-value">
+                                                {% if employment_data.employment_status == 'EMPLOYED' %}Employed
+                                                {% elif employment_data.employment_status == 'SELF_EMPLOYED' %}Self-Employed
+                                                {% elif employment_data.employment_status == 'UNEMPLOYED' %}Unemployed
+                                                {% elif employment_data.employment_status == 'RETIRED' %}Retired
+                                                {% elif employment_data.employment_status == 'STUDENT' %}Student
+                                                {% else %}-------
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Occupation:</div>
+                                            <div class="review-value">{{ employment_data.occupation|default:"-------" }}</div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Employer:</div>
+                                            <div class="review-value">{{ employment_data.employer|default:"-------" }}</div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Employer Address:</div>
+                                            <div class="review-value">{{ employment_data.employer_address|default:"-------" }}</div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Monthly Income:</div>
+                                            <div class="review-value">
+                                                {% if employment_data.monthly_income %}
+                                                    UGX {{ employment_data.monthly_income|floatformat:2 }}
+                                                {% else %}
+                                                    -------
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Income Source:</div>
+                                            <div class="review-value">{{ employment_data.income_source|default:"-------" }}</div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Other Income Sources:</div>
+                                            <div class="review-value">{{ employment_data.other_income_sources|default:"-------" }}</div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Membership Information Review -->
+                                    {% if membership_data %}
+                                    <div class="review-section">
+                                        <h5><i class="pe-7s-id"></i> Membership Details</h5>
+                                        <div class="review-item">
+                                            <div class="review-label">Member Category:</div>
+                                            <div class="review-value">
+                                                {% if membership_data.member_category == 'REGULAR' %}Regular Member
+                                                {% elif membership_data.member_category == 'PREMIUM' %}Premium Member
+                                                {% elif membership_data.member_category == 'STUDENT' %}Student Member
+                                                {% elif membership_data.member_category == 'SENIOR' %}Senior Member
+                                                {% elif membership_data.member_category == 'CORPORATE' %}Corporate Member
+                                                {% else %}-------
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Membership Plan:</div>
+                                            <div class="review-value">
+                                                {% if membership_data.membership_plan == 'BASIC' %}Basic Plan
+                                                {% elif membership_data.membership_plan == 'STANDARD' %}Standard Plan
+                                                {% elif membership_data.membership_plan == 'PREMIUM' %}Premium Plan
+                                                {% elif membership_data.membership_plan == 'VIP' %}VIP Plan
+                                                {% else %}-------
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Membership Date:</div>
+                                            <div class="review-value">{{ membership_data.membership_date|date:"M d, Y"|default:"-------" }}</div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Application Date:</div>
+                                            <div class="review-value">{{ membership_data.membership_application_date|date:"M d, Y"|default:"-------" }}</div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Status:</div>
+                                            <div class="review-value">
+                                                {% if membership_data.status == 'ACTIVE' %}Active
+                                                {% elif membership_data.status == 'PENDING_APPROVAL' %}Pending Approval
+                                                {% elif membership_data.status == 'SUSPENDED' %}Suspended
+                                                {% elif membership_data.status == 'INACTIVE' %}Inactive
+                                                {% elif membership_data.status == 'TERMINATED' %}Terminated
+                                                {% else %}-------
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Tax ID:</div>
+                                            <div class="review-value">{{ membership_data.tax_id|default:"-------" }}</div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Next of Kin Review -->
+                                    {% if nok_data and nok_data.nok_option == 'new' %}
+                                    <div class="review-section">
+                                        <h5><i class="pe-7s-users"></i> Next of Kin</h5>
+                                        <div class="review-item">
+                                            <div class="review-label">Name:</div>
+                                            <div class="review-value">{{ nok_data.nok_name|default:"-------" }}</div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Relationship:</div>
+                                            <div class="review-value">
+                                                {% if nok_data.nok_relation == 'SPOUSE' %}Spouse
+                                                {% elif nok_data.nok_relation == 'PARENT' %}Parent
+                                                {% elif nok_data.nok_relation == 'CHILD' %}Child
+                                                {% elif nok_data.nok_relation == 'SIBLING' %}Sibling
+                                                {% elif nok_data.nok_relation == 'RELATIVE' %}Relative
+                                                {% elif nok_data.nok_relation == 'FRIEND' %}Friend
+                                                {% elif nok_data.nok_relation == 'OTHER' %}Other
+                                                {% else %}-------
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Contact:</div>
+                                            <div class="review-value">{{ nok_data.nok_contact|default:"-------" }}</div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Email:</div>
+                                            <div class="review-value">{{ nok_data.nok_email|default:"-------" }}</div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Address:</div>
+                                            <div class="review-value">{{ nok_data.nok_address|default:"-------" }}</div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">ID Number:</div>
+                                            <div class="review-value">{{ nok_data.nok_id_number|default:"-------" }}</div>
+                                        </div>
+                                        <div class="review-item">
+                                            <div class="review-label">Emergency Contact:</div>
+                                            <div class="review-value">
+                                                {% if nok_data.nok_is_emergency_contact %}Yes{% else %}No{% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% elif nok_data and nok_data.nok_option == 'skip' %}
+                                    <div class="review-section">
+                                        <h5><i class="pe-7s-users"></i> Next of Kin</h5>
+                                        <p class="text-muted">Next of kin information will be added later.</p>
+                                    </div>
+                                    {% endif %}
+
+                                    <hr class="my-4">
+
+                                    <!-- Confirmation Fields -->
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="position-relative mb-3">
+                                                <div class="form-check">
+                                                    {% render_field wizard.form.confirm_creation class="form-check-input" %}
+                                                    <label class="form-check-label required-field" for="{{ wizard.form.confirm_creation.id_for_label }}">
+                                                        {{ wizard.form.confirm_creation.label }}
+                                                    </label>
+                                                </div>
+                                                {% if wizard.form.confirm_creation.errors %}
+                                                    <div class="text-danger">{{ wizard.form.confirm_creation.errors.0 }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="position-relative mb-3">
+                                                <label class="form-label">{{ wizard.form.additional_notes.label }}</label>
+                                                {% render_field wizard.form.additional_notes class="form-control" rows="3" %}
+                                                <small class="form-text text-muted">{{ wizard.form.additional_notes.help_text }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="alert alert-info mt-4">
+                                        <i class="fa fa-info-circle"></i> 
+                                        Please review all information carefully before submitting. Once submitted, the member registration will be processed.
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="divider"></div>
+                <div class="clearfix">
+                    <button type="button" id="reset-btn" class="btn-shadow float-start btn btn-link">Reset</button>
+                    <button type="button" id="next-btn" class="btn-shadow btn-wide float-end btn-pill btn-hover-shine btn btn-primary">
+                        <span class="next-text">Next</span>
+                    </button>
+                    <button type="button" id="prev-btn" class="btn-shadow float-end btn-wide btn-pill me-3 btn btn-outline-secondary">Previous</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Card -->
+    <div class="col-md-12 col-lg-3">
+        <!-- Help Card -->
+        <div class="main-card mb-3 card">
+            <div class="card-header">Need Help?</div>
+            <div class="card-body">
+                <p class="mb-2"><strong>Required Fields</strong></p>
+                <p class="text-muted small">Fields marked with <span class="text-danger">*</span> are required.</p>
+                
+                <p class="mb-2 mt-3"><strong>Navigation</strong></p>
+                <p class="text-muted small">Use the Next/Previous buttons or click on step numbers to navigate.</p>
+                
+                <p class="mb-2 mt-3"><strong>Support</strong></p>
+                <p class="text-muted small">Contact the admin if you encounter any issues.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script type="text/javascript" src="{% static 'vendors/smartwizard/dist/js/jquery.smartWizard.min.js' %}"></script>
+
+<script type="text/javascript">
+$(document).ready(function() {
+    // Map wizard steps to form steps
+    var stepMapping = {
+        0: 'basic_info',
+        1: 'contact_info',
+        2: 'employment_info',
+        3: 'membership_info',
+        4: 'next_of_kin',
+        5: 'confirmation'
+    };
+
+    // Get current Django wizard step
+    var currentDjangoStep = '{{ wizard.steps.current }}';
+    var currentStepIndex = parseInt(Object.keys(stepMapping).find(key => stepMapping[key] === currentDjangoStep));
+    
+    console.log('Current Django Step:', currentDjangoStep);
+    console.log('Current Step Index:', currentStepIndex);
+
+    // Initialize SmartWizard with the current step
+    var wizard = $("#smartwizard").smartWizard({
+        selected: currentStepIndex,
+        transitionEffect: "fade",
+        transitionSpeed: 400,
+        showStepURLhash: false,
+        toolbarSettings: {
+            toolbarPosition: "none",
+        },
+        anchorSettings: {
+            anchorClickable: false,
+            enableAllAnchors: false,
+            markDoneStep: true,
+            markAllPreviousStepsAsDone: true
+        }
+    });
+
+    // After initialization, manually mark previous steps as done
+    setTimeout(function() {
+        for (var i = 0; i < currentStepIndex; i++) {
+            // Find the step anchor and add done class
+            var $stepAnchor = wizard.find('.forms-wizard li').eq(i);
+            $stepAnchor.addClass('done').removeClass('disabled');
+            
+            // Also update via SmartWizard API
+            wizard.smartWizard("setState", [i], "done");
+        }
+        
+        // Ensure current step is active
+        wizard.smartWizard("setState", [currentStepIndex], "active");
+    }, 100);
+
+    // Handle Next button - just submit the form
+    $("#next-btn").on("click", function() {
+        var currentIndex = wizard.smartWizard("getStepIndex");
+        var isLastStep = currentIndex === 5;
+
+        if (isLastStep) {
+            $("#wizard-form").submit();
+        } else {
+            $("#wizard-form").submit();
+        }
+    });
+
+    // Handle Previous button
+    $("#prev-btn").on("click", function() {
+        var currentIndex = wizard.smartWizard("getStepIndex");
+        if (currentIndex > 0) {
+            var prevStep = stepMapping[currentIndex - 1];
+            // Remove any existing wizard_goto_step inputs
+            $('input[name="wizard_goto_step"]').remove();
+            // Add new one
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'wizard_goto_step',
+                value: prevStep
+            }).appendTo('#wizard-form');
+            $("#wizard-form").submit();
+        }
+    });
+
+    // Handle Reset button
+    $("#reset-btn").on("click", function() {
+        if (confirm("Are you sure you want to reset the form? All data will be lost.")) {
+            window.location.href = "{% url 'members:member_create' %}";
+        }
+    });
+
+    // Update button display based on step
+    function updateButtons() {
+        var currentIndex = wizard.smartWizard("getStepIndex");
+        
+        if (currentIndex === 5) {
+            $("#next-btn .next-text").text("Submit Registration");
+            $("#next-btn").removeClass("btn-primary").addClass("btn-success");
+        } else {
+            $("#next-btn .next-text").text("Next");
+            $("#next-btn").removeClass("btn-success").addClass("btn-primary");
+        }
+
+        if (currentIndex === 0) {
+            $("#prev-btn").hide();
+        } else {
+            $("#prev-btn").show();
+        }
+    }
+
+    // Call updateButtons on initialization
+    updateButtons();
+
+    // Update buttons when step changes
+    wizard.on("showStep", function(e, anchorObject, stepIndex, stepDirection, stepPosition) {
+        updateButtons();
+    });
+
+    // Handle Next of Kin option toggle
+    $(document).on('change', 'input[name="next_of_kin-nok_option"]', function() {
+        if ($(this).val() === 'new') {
+            $('#nok-fields').slideDown();
+        } else {
+            $('#nok-fields').slideUp();
+        }
+    });
+
+    // Initialize Next of Kin fields visibility
+    var nokOption = $('input[name="next_of_kin-nok_option"]:checked').val();
+    if (nokOption === 'new') {
+        $('#nok-fields').show();
+    }
+
+    // Prevent form submission on Enter key (except in textareas)
+    $('#wizard-form').on('keypress', function(e) {
+        if (e.which === 13 && e.target.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+            return false;
+        }
+    });
+});
+</script>
+
+<style>
+.progress-tracker {
+    padding: 20px 0;
+}
+.progress-step {
+    display: flex;
+    align-items: center;
+    padding: 15px 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    background-color: #f8f9fa;
+    transition: all 0.3s;
+}
+.progress-step.active {
+    background-color: #007bff;
+    color: white;
+}
+.progress-step.done {
+    background-color: #28a745;
+    color: white;
+}
+.step-icon {
+    font-size: 24px;
+    margin-right: 15px;
+    width: 40px;
+    text-align: center;
+}
+.step-label {
+    font-weight: 500;
+}
+
+/* Ensure done steps show checkmark */
+.forms-wizard li.done a em {
+    background-color: #28a745 !important;
+    color: white !important;
+}
+
+.forms-wizard li.done a em:after {
+    content: "✓";
+    font-style: normal;
+}
+</style>
+
+{% endblock %}

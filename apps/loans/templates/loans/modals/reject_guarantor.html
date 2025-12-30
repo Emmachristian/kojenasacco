@@ -1,0 +1,48 @@
+<!-- templates/loans/modals/reject_guarantor.html --> 
+
+<div class="modal-header bg-danger text-white">
+    <h5 class="modal-title">Reject Guarantor</h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+</div>
+
+<form hx-post="{% url 'loans:guarantor_reject_submit' guarantor.id %}"
+      hx-target="#guarantor-card-{{ guarantor.id }}"
+      hx-swap="outerHTML">
+    {% csrf_token %}
+    
+    <div class="modal-body">
+        {% if error_message %}
+        <div class="alert alert-danger">{{ error_message }}</div>
+        {% endif %}
+        
+        <p>You are rejecting this guarantor:</p>
+        
+        <div class="card bg-light mb-3">
+            <div class="card-body">
+                <strong>Guarantor:</strong> {{ guarantor.guarantor.get_full_name }}<br>
+                <strong>Applicant:</strong> {{ guarantor.loan_application.member.get_full_name }}<br>
+                <strong>Amount:</strong> {{ guarantor.formatted_guarantee_amount }}
+            </div>
+        </div>
+        
+        <div class="mb-3">
+            <label for="reason" class="form-label">Rejection Reason *</label>
+            <textarea name="reason" 
+                      id="reason" 
+                      class="form-control" 
+                      rows="3" 
+                      required 
+                      placeholder="Explain why you're rejecting this guarantor"></textarea>
+        </div>
+    </div>
+    
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Cancel
+        </button>
+        <button type="submit" class="btn btn-danger">
+            <span class="htmx-indicator spinner-border spinner-border-sm me-2"></span>
+            <i class="bi bi-x-circle me-1"></i> Reject Guarantor
+        </button>
+    </div>
+</form>

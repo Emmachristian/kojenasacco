@@ -27,7 +27,16 @@
 
     // Save theme preference to server via AJAX
     function saveThemePreference(setting, value) {
-        fetch('/save-theme-preference/', {
+        // Use the URL from Django template with correct fallback
+        const url = window.THEME_SETTINGS_URL;
+        
+        console.log('Saving theme preference:', {
+            url: url,
+            setting: setting,
+            value: value
+        });
+        
+        fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -38,7 +47,12 @@
                 value: value
             })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 console.log('✓ Theme saved:', setting, '=', value);

@@ -62,6 +62,21 @@
                     
                     <!-- Main Content Area -->
                     {% block content %}{% endblock %}
+
+                    <!-- ============================================ -->
+                    <!-- GLOBAL MODAL CONTAINER (Managed by htmx-modal.js) -->
+                    <!-- ============================================ -->
+                    <div id="global-modal" 
+                        class="modal fade" 
+                        tabindex="-1" 
+                        aria-labelledby="modal-title"
+                        aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                            <div class="modal-content" id="modal-content">
+                                <!-- HTMX loads modal content here dynamically -->
+                            </div>
+                        </div>
+                    </div>
                     
                 </div>
 
@@ -72,14 +87,17 @@
 
         </div> <!-- End of app-main -->
 
-        <!-- Drawer Panel -->
-        {% include 'partials/drawer.html' %}
-
     </div>
     <!-- End of App Container -->
 
     <!-- Load jQuery first to avoid conflicts -->
     <script type="text/javascript" src="{% static 'vendors/jquery/dist/jquery.min.js' %}"></script>
+
+    <!-- HTMX -->
+    <script type="text/javascript" src="{% static 'js/htmx.min.js' %}"></script>
+
+    <!-- Alpine.js -->
+    <script defer src="{% static 'js/alpine.min.js' %}"></script>
 
     <!-- Plugin dependencies -->
     <script type="text/javascript" src="{% static 'vendors/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
@@ -92,6 +110,9 @@
     <script type="text/javascript" src="{% static 'vendors/jquery.fancytree/dist/jquery.fancytree-all-deps.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'vendors/apexcharts/dist/apexcharts.min.js' %}"></script>
     
+    <!-- SweetAlert2 - Required for HTMX Modal notifications -->
+    <script type="text/javascript" src="{% static 'vendors/sweetalert2/dist/sweetalert2.all.min.js' %}"></script>
+    
     <!-- Custom JS -->
     <script type="text/javascript" src="{% static 'js/charts/apex-charts.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/circle-progress.js' %}"></script>
@@ -99,7 +120,6 @@
     <script type="text/javascript" src="{% static 'js/scrollbar.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/toastr.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/treeview.js' %}"></script>
-
 
     <!-- Template navigation JS File -->
     <script src="{% static 'js/sidebar-nav.js' %}"></script>
@@ -115,10 +135,19 @@
             pageTabsStyle: "{{ page_tabs_style|default:'body-tabs-shadow' }}",
             themeColor: "{{ theme_color|default:'app-theme-white' }}"
         };
+        
+        // Add theme settings URL - THIS MUST BE SET BEFORE theme-settings.js LOADS
+        window.THEME_SETTINGS_URL = "{% url 'accounts:save_theme_preference' %}";
     </script>
-    
+
     <!-- Theme Settings Management -->
     <script src="{% static 'js/theme-settings.js' %}"></script>
+
+    <!-- ============================================ -->
+    <!-- HTMX MODAL MANAGEMENT (External JS File) -->
+    <!-- Handles all modal operations and SweetAlert2 notifications -->
+    <!-- ============================================ -->
+    <script type="text/javascript" src="{% static 'js/htmx-modal.js' %}"></script>
 
     {% block extra_scripts %}{% endblock %}
 </body>

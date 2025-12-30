@@ -12,10 +12,10 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # Core app – homepage / dashboard
-    path('', include(('core.urls', 'core'), namespace='core')),
+    path('core/', include(('core.urls', 'core'), namespace='core')),
 
     # Accounts app – authentication & profiles
-    path('accounts/', include(('accounts.urls', 'accounts'), namespace='accounts')),
+    path('', include(('accounts.urls', 'accounts'), namespace='accounts')),
 
     # Members app
     path('members/', include(('members.urls', 'members'), namespace='members')),
@@ -25,6 +25,9 @@ urlpatterns = [
 
     # Dividends app
     path('dividends/', include(('dividends.urls', 'dividends'), namespace='dividends')),
+
+    # Shares app
+    path('shares/', include(('shares.urls', 'shares'), namespace='shares')),
 
     # Loans app
     path('loans/', include(('loans.urls', 'loans'), namespace='loans')),

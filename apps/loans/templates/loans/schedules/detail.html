@@ -1,0 +1,21 @@
+"""
+<!-- Add this button to the page -->
+<div class="card-header d-flex justify-content-between align-items-center">
+    <h5>Application Details</h5>
+    <div>
+        {% if application.status in 'SUBMITTED,UNDER_REVIEW' %}
+        <button class="btn btn-success"
+                hx-get="{% url 'loans:application_approve_modal' application.id %}"
+                hx-target="#modal-content"
+                hx-swap="innerHTML">
+            <i class="bi bi-check-circle me-1"></i> Approve/Reject
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Make sure application content has the correct ID for targeting -->
+<div id="application-card-{{ application.id }}" class="card-body">
+    <!-- Application content -->
+</div>
+"""

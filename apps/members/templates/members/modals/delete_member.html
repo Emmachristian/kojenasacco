@@ -1,0 +1,66 @@
+<div class="modal-content">
+    <div class="modal-header bg-danger">
+        <h5 class="modal-title text-white">
+            <i class="fa fa-trash me-2"></i>Delete Member
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+        <div class="alert alert-danger">
+            <i class="fa fa-exclamation-triangle me-2"></i>
+            <strong>Warning: This action cannot be undone!</strong>
+        </div>
+        
+        <p>You are about to permanently delete the following member:</p>
+        
+        <div class="card bg-light mb-3">
+            <div class="card-body">
+                <h6 class="mb-2"><strong>{{ member.get_full_name }}</strong></h6>
+                <p class="mb-1"><strong>Member #:</strong> {{ member.member_number }}</p>
+                <p class="mb-1"><strong>Status:</strong> 
+                    <span class="badge bg-secondary">{{ member.get_status_display }}</span>
+                </p>
+                <p class="mb-0"><strong>Joined:</strong> {{ member.created_at|date:"M d, Y" }}</p>
+            </div>
+        </div>
+        
+        {% if not can_delete %}
+        <div class="alert alert-warning">
+            <i class="fa fa-exclamation-circle me-2"></i>
+            <strong>Cannot Delete Member</strong>
+            <p class="mb-2 mt-2">This member has associated records and cannot be deleted:</p>
+            <ul class="mb-0">
+                {% if has_loans %}<li>Active or past loans</li>{% endif %}
+                {% if has_savings %}<li>Savings accounts</li>{% endif %}
+                {% if has_shares %}<li>Share accounts</li>{% endif %}
+                {% if has_transactions %}<li>Financial transactions</li>{% endif %}
+            </ul>
+            <p class="mt-2 mb-0"><small>Please archive or deactivate this member instead.</small></p>
+        </div>
+        {% else %}
+        <div class="alert alert-info mb-0">
+            <i class="fa fa-info-circle me-2"></i>
+            All associated data (payment methods, next of kin, contacts) will also be deleted.
+        </div>
+        {% endif %}
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fa fa-times me-1"></i>Cancel
+        </button>
+        {% if can_delete %}
+        <form hx-delete="{% url 'members:member_delete_submit' member.pk %}"
+              hx-confirm="Type 'DELETE' to confirm"
+              class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">
+                <i class="fa fa-trash me-1"></i>Delete Member
+            </button>
+        </form>
+        {% else %}
+        <button type="button" class="btn btn-danger" disabled>
+            <i class="fa fa-trash me-1"></i>Cannot Delete
+        </button>
+        {% endif %}
+    </div>
+</div>

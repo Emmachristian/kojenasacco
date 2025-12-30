@@ -1,0 +1,127 @@
+<form id="fiscalYearForm"
+      hx-post="{% if fiscal_year %}{% url 'core:fiscal_year_modal' %}?id={{ fiscal_year.id }}{% else %}{% url 'core:fiscal_year_modal' %}{% endif %}"
+      hx-swap="none"
+      hx-on::after-request="if(event.detail.successful) { bootstrap.Modal.getInstance(document.getElementById('fiscalYearModal')).hide(); location.reload(); }">
+    {% csrf_token %}
+    
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger">
+        {{ form.non_field_errors }}
+    </div>
+    {% endif %}
+    
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="{{ form.name.id_for_label }}" class="form-label">
+                {{ form.name.label }} <span class="text-danger">*</span>
+            </label>
+            {{ form.name }}
+            {% if form.name.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ form.name.errors|join:", " }}
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <label for="{{ form.code.id_for_label }}" class="form-label">
+                {{ form.code.label }} <span class="text-danger">*</span>
+            </label>
+            {{ form.code }}
+            {% if form.code.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ form.code.errors|join:", " }}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="{{ form.start_date.id_for_label }}" class="form-label">
+                {{ form.start_date.label }} <span class="text-danger">*</span>
+            </label>
+            {{ form.start_date }}
+            {% if form.start_date.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ form.start_date.errors|join:", " }}
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <label for="{{ form.end_date.id_for_label }}" class="form-label">
+                {{ form.end_date.label }} <span class="text-danger">*</span>
+            </label>
+            {{ form.end_date }}
+            {% if form.end_date.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ form.end_date.errors|join:", " }}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12 mb-3">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <div class="form-check form-switch">
+                        {{ form.is_active }}
+                        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                            <strong>{{ form.is_active.label }}</strong>
+                            <br>
+                            <small class="text-muted">
+                                Only one fiscal year can be active at a time.
+                            </small>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mb-3">
+        <label for="{{ form.description.id_for_label }}" class="form-label">
+            {{ form.description.label }}
+        </label>
+        {{ form.description }}
+        {% if form.description.errors %}
+            <div class="invalid-feedback d-block">
+                {{ form.description.errors|join:", " }}
+            </div>
+        {% endif %}
+    </div>
+    
+    {% if fiscal_year %}
+    <div class="alert alert-info">
+        <h6 class="alert-heading">
+            <i class="fa fa-info-circle me-1"></i> Fiscal Year Status
+        </h6>
+        <div class="row">
+            <div class="col-md-4">
+                <strong>Status:</strong> 
+                <span class="badge bg-{{ fiscal_year.status|lower }}">
+                    {{ fiscal_year.get_status_display }}
+                </span>
+            </div>
+            <div class="col-md-4">
+                <strong>Closed:</strong> 
+                {% if fiscal_year.is_closed %}
+                    <i class="fa fa-check-circle text-success"></i> Yes
+                {% else %}
+                    <i class="fa fa-times-circle text-muted"></i> No
+                {% endif %}
+            </div>
+            <div class="col-md-4">
+                <strong>Locked:</strong> 
+                {% if fiscal_year.is_locked %}
+                    <i class="fa fa-lock text-danger"></i> Yes
+                {% else %}
+                    <i class="fa fa-unlock text-muted"></i> No
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</form>

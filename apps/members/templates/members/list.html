@@ -1,0 +1,953 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+{% load widget_tweaks %}
+
+{% block extra_css %}
+<style>
+/* ============================================================================
+   MEMBER STATUS BADGE STYLING
+   ============================================================================ */
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid;
+    display: inline-block;
+}
+
+.status-badge.active {
+    background-color: #d4edda;
+    color: #155724;
+    border-color: #c3e6cb;
+}
+
+.status-badge.pending_approval {
+    background-color: #fff3cd;
+    color: #856404;
+    border-color: #ffeaa7;
+}
+
+.status-badge.suspended,
+.status-badge.blacklisted {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-color: #f5c6cb;
+}
+
+.status-badge.dormant {
+    background-color: #e2e3e5;
+    color: #383d41;
+    border-color: #d6d8db;
+}
+
+.status-badge.on_hold {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border-color: #bee5eb;
+}
+
+/* ============================================================================
+   FILTERS & SEARCH SECTION
+   ============================================================================ */
+
+.member-filters {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 25px;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.filter-header {
+    margin-bottom: 20px;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.card-animate {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================================================
+   MEMBER STATUS INDICATORS
+   ============================================================================ */
+
+.member-status-indicator {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.member-status-indicator.active {
+    background-color: #28a745;
+    animation: pulse-green 2s infinite;
+}
+
+.member-status-indicator.pending_approval {
+    background-color: #ffc107;
+}
+
+.member-status-indicator.suspended,
+.member-status-indicator.blacklisted {
+    background-color: #dc3545;
+}
+
+.member-status-indicator.dormant {
+    background-color: #6c757d;
+}
+
+@keyframes pulse-green {
+    0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+}
+
+/* ============================================================================
+   KYC STATUS INDICATORS
+   ============================================================================ */
+
+.kyc-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.kyc-indicator.kyc-verified {
+    background-color: #28a745;
+}
+
+.kyc-indicator.kyc-pending {
+    background-color: #ffc107;
+}
+
+.kyc-indicator.kyc-rejected {
+    background-color: #dc3545;
+}
+
+.kyc-indicator.kyc-expired {
+    background-color: #6c757d;
+}
+
+.kyc-indicator.kyc-in_progress {
+    background-color: #17a2b8;
+}
+
+.kyc-indicator.kyc-requires_update {
+    background-color: #fd7e14;
+}
+
+/* ============================================================================
+   CATEGORY & BADGE DISPLAY
+   ============================================================================ */
+
+.category-badge {
+    background-color: #007bff;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    display: inline-block;
+}
+
+/* ============================================================================
+   PROFILE AVATAR
+   ============================================================================ */
+
+.profile-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+/* ============================================================================
+   STATISTICS SUMMARY
+   ============================================================================ */
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.stat-icon {
+    width: 45px;
+    height: 45px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+}
+
+.stat-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.stat-content h3 {
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1;
+    color: white;
+}
+
+.stat-content p {
+    margin: 0;
+    font-size: 0.85rem;
+    opacity: 0.95;
+    color: white;
+}
+
+.stat-content small {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.75rem;
+    opacity: 0.8;
+    color: white;
+}
+
+.stats-divider {
+    width: 1px;
+    height: 45px;
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Responsive adjustments for stats */
+@media (max-width: 991px) {
+    .stats-summary-compact {
+        padding: 15px;
+    }
+    
+    .stat-item {
+        margin-bottom: 15px;
+    }
+    
+    .stats-divider {
+        display: none;
+    }
+}
+
+/* ============================================================================
+   TABLE STYLING
+   ============================================================================ */
+
+.table-responsive {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+    color: #495057;
+    padding: 15px 12px;
+}
+
+.table tbody td {
+    vertical-align: middle;
+    padding: 12px;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* ============================================================================
+   EMPTY STATE
+   ============================================================================ */
+
+.empty-state {
+    text-align: center;
+    padding: 80px 30px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 15px;
+    margin: 30px 0;
+    border: 2px dashed #dee2e6;
+}
+
+.empty-state-icon {
+    font-size: 5rem;
+    color: #dee2e6;
+    margin-bottom: 25px;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+/* ============================================================================
+   PAGINATION
+   ============================================================================ */
+
+.pagination {
+    margin: 20px 0;
+}
+
+.page-link {
+    color: #667eea;
+    border: 1px solid #dee2e6;
+    padding: 0.5rem 0.75rem;
+}
+
+.page-link:hover {
+    background-color: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.page-item.active .page-link {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+/* ============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================ */
+
+@media (max-width: 768px) {
+    .profile-avatar,
+    .avatar-placeholder {
+        width: 35px;
+        height: 35px;
+    }
+    
+    .member-filters {
+        padding: 15px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Page Title -->
+<div class="app-page-title">
+    <div class="page-title-wrapper">
+        <div class="page-title-heading">
+            <div class="page-title-icon">
+                <i class="pe-7s-users icon-gradient bg-happy-itmeo"></i>
+            </div>
+            <div>
+                Member Directory
+                <div class="page-title-subheading">
+                    Manage member information, status, and membership details
+                </div>
+            </div>
+        </div>
+        <div class="page-title-actions">
+            <div class="btn-group" role="group">
+                <a href="{% url 'members:member_create' %}" class="btn btn-primary">
+                    <i class="fa fa-plus me-1"></i> Register New Member
+                </a>
+                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#printModal">
+                    <i class="fa fa-print me-1"></i> Print
+                </button>
+                <a href="{% url 'members:export_members_excel' %}" class="btn btn-outline-success">
+                    <i class="fa fa-file-excel me-1"></i> Export Excel
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if messages %}
+    <script>
+        {% for message in messages %}
+            {% if 'sweetalert' in message.tags %}
+                {% if message.level == DEFAULT_MESSAGE_LEVELS.SUCCESS %}
+                    showSuccess('{{ message|escapejs }}');
+                {% elif message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
+                    showError('{{ message|escapejs }}');
+                {% elif message.level == DEFAULT_MESSAGE_LEVELS.WARNING %}
+                    showWarning('{{ message|escapejs }}');
+                {% else %}
+                    showInfo('{{ message|escapejs }}');
+                {% endif %}
+            {% else %}
+                {# Regular Django message display #}
+                // ... show as banner/toast
+            {% endif %}
+        {% endfor %}
+    </script>
+{% endif %}
+
+<!-- Statistics Cards (stays above filters) -->
+<div class="row mb-2" id="stats-cards">
+    <div class="col-xl-3 col-md-6">
+        <div class="stats-card">
+            <div class="stats-icon bg-primary">
+                <i class="pe-7s-users"></i>
+            </div>
+            <div class="stats-content">
+                <div class="stats-label">Total Members</div>
+                <h3 id="statTotal">{{ stats.total|default:0 }}</h3>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stats-card">
+            <div class="stats-icon bg-success">
+                <i class="pe-7s-check"></i>
+            </div>
+            <div class="stats-content">
+                <div class="stats-label">Active Members</div>
+                <h3 id="statActive">{{ stats.active|default:0 }}</h3>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stats-card">
+            <div class="stats-icon bg-warning">
+                <i class="pe-7s-clock"></i>
+            </div>
+            <div class="stats-content">
+                <div class="stats-label">Pending Approval</div>
+                <h3 id="statPending">{{ stats.pending_approval|default:0 }}</h3>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stats-card">
+            <div class="stats-icon bg-info">
+                <i class="pe-7s-graph2"></i>
+            </div>
+            <div class="stats-content">
+                <div class="stats-label">Avg Credit Score</div>
+                <h3 id="statCreditScore">{{ stats.avg_credit_score|default:0|floatformat:0 }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Section -->
+<section class="section">
+    <div class="row">
+        <div class="col-lg-12">
+            <!-- Results Card -->
+            <div class="main-card mb-3 card card-animate">
+                <div class="card-body">
+                    
+                    <!-- Filter Header -->
+                    <div class="filter-header">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                            <h5 class="card-title mb-0">
+                                <i class="pe-7s-users me-2 text-primary"></i>
+                                Member Directory
+                            </h5>
+                            <div class="filter-actions">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="resetFilters()">
+                                    <i class="fa fa-times me-1"></i> Reset Filters
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-info" onclick="window.location.reload()">
+                                    <i class="fa fa-refresh me-1"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search & Filters with HTMX -->
+                    <div class="member-filters">
+                        <form id="searchForm" class="row g-3">
+                            <!-- Search Input -->
+                            <div class="col-md-4">
+                                <label for="{{ filter_form.q.id_for_label }}" class="form-label small text-muted mb-1">{{ filter_form.q.label }}</label>
+                                {{ filter_form.q }}
+                            </div>
+                            
+                            <!-- Status Filter -->
+                            <div class="col-md-2">
+                                <label for="{{ filter_form.status.id_for_label }}" class="form-label small text-muted mb-1">{{ filter_form.status.label }}</label>
+                                {{ filter_form.status }}
+                            </div>
+
+                            <!-- Category Filter -->
+                            <div class="col-md-2">
+                                <label for="{{ filter_form.member_category.id_for_label }}" class="form-label small text-muted mb-1">{{ filter_form.member_category.label }}</label>
+                                {{ filter_form.member_category }}
+                            </div>
+                            
+                            <!-- Plan Filter -->
+                            <div class="col-md-2">
+                                <label for="{{ filter_form.membership_plan.id_for_label }}" class="form-label small text-muted mb-1">{{ filter_form.membership_plan.label }}</label>
+                                {{ filter_form.membership_plan }}
+                            </div>
+
+                            <!-- Gender Filter -->
+                            <div class="col-md-2">
+                                <label for="{{ filter_form.gender.id_for_label }}" class="form-label small text-muted mb-1">{{ filter_form.gender.label }}</label>
+                                {{ filter_form.gender }}
+                            </div>
+
+                            <!-- KYC Status Filter -->
+                            <div class="col-md-3">
+                                <label for="{{ filter_form.kyc_status.id_for_label }}" class="form-label small text-muted mb-1">{{ filter_form.kyc_status.label }}</label>
+                                {{ filter_form.kyc_status }}
+                            </div>
+
+                            <!-- Risk Rating Filter -->
+                            <div class="col-md-3">
+                                <label for="{{ filter_form.risk_rating.id_for_label }}" class="form-label small text-muted mb-1">{{ filter_form.risk_rating.label }}</label>
+                                {{ filter_form.risk_rating }}
+                            </div>
+
+                            <!-- Employment Status Filter -->
+                            <div class="col-md-3">
+                                <label for="{{ filter_form.employment_status.id_for_label }}" class="form-label small text-muted mb-1">{{ filter_form.employment_status.label }}</label>
+                                {{ filter_form.employment_status }}
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Results Container -->
+                    <div id="member-results"
+                         hx-get="{% url 'members:member_search' %}"
+                         hx-trigger="load"
+                         hx-swap="innerHTML">
+                        <!-- Initial loading state -->
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary mb-3" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="text-muted mb-0">Loading members...</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Print Options Modal -->
+<div class="modal fade" id="printModal" tabindex="-1" aria-labelledby="printModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="printModalLabel">
+                    <i class="fa fa-print me-2"></i>Print Options
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle me-2"></i>
+                    Select the fields you want to include in your print. Current filters will be applied.
+                </div>
+
+                <!-- Field Selection (same as before) -->
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label fw-bold mb-0">Select Fields to Print</label>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-primary" onclick="selectAllFields()">
+                                    <i class="fa fa-check-square me-1"></i>Select All
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="deselectAllFields()">
+                                    <i class="fa fa-square me-1"></i>Deselect All
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Basic Information -->
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-primary text-white">
+                                <strong><i class="fa fa-user me-2"></i>Basic Information</strong>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input field-checkbox" type="checkbox" value="member_number" id="field_member_number" checked>
+                                    <label class="form-check-label" for="field_member_number">
+                                        Member Number
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input field-checkbox" type="checkbox" value="full_name" id="field_full_name" checked>
+                                    <label class="form-check-label" for="field_full_name">
+                                        Full Name
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input field-checkbox" type="checkbox" value="id_number" id="field_id_number">
+                                    <label class="form-check-label" for="field_id_number">
+                                        ID Number
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input field-checkbox" type="checkbox" value="date_of_birth" id="field_date_of_birth">
+                                    <label class="form-check-label" for="field_date_of_birth">
+                                        Date of Birth
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input field-checkbox" type="checkbox" value="gender" id="field_gender">
+                                    <label class="form-check-label" for="field_gender">
+                                        Gender
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Information -->
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-success text-white">
+                                <strong><i class="fa fa-phone me-2"></i>Contact Information</strong>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input field-checkbox" type="checkbox" value="phone_primary" id="field_phone_primary" checked>
+                                    <label class="form-check-label" for="field_phone_primary">
+                                        Primary Phone
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input field-checkbox" type="checkbox" value="phone_secondary" id="field_phone_secondary">
+                                    <label class="form-check-label" for="field_phone_secondary">
+                                        Secondary Phone
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input field-checkbox" type="checkbox" value="personal_email" id="field_personal_email">
+                                    <label class="form-check-label" for="field_personal_email">
+                                        Email
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input field-checkbox" type="checkbox" value="physical_address" id="field_physical_address">
+                                    <label class="form-check-label" for="field_physical_address">
+                                        Physical Address
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Membership Information -->
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-info text-white">
+                                <strong><i class="fa fa-id-card me-2"></i>Membership</strong>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input field-checkbox" type="checkbox" value="member_category" id="field_member_category" checked>
+                                    <label class="form-check-label" for="field_member_category">
+                                        Member Category
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input field-checkbox" type="checkbox" value="membership_plan" id="field_membership_plan">
+                                    <label class="form-check-label" for="field_membership_plan">
+                                        Membership Plan
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input field-checkbox" type="checkbox" value="status" id="field_status" checked>
+                                    <label class="form-check-label" for="field_status">
+                                        Status
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input field-checkbox" type="checkbox" value="membership_date" id="field_membership_date">
+                                    <label class="form-check-label" for="field_membership_date">
+                                        Membership Date
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Financial & KYC -->
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-warning text-dark">
+                                <strong><i class="fa fa-chart-line me-2"></i>Financial & KYC</strong>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input field-checkbox" type="checkbox" value="credit_score" id="field_credit_score" checked>
+                                    <label class="form-check-label" for="field_credit_score">
+                                        Credit Score
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input field-checkbox" type="checkbox" value="kyc_status" id="field_kyc_status" checked>
+                                    <label class="form-check-label" for="field_kyc_status">
+                                        KYC Status
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input field-checkbox" type="checkbox" value="risk_rating" id="field_risk_rating">
+                                    <label class="form-check-label" for="field_risk_rating">
+                                        Risk Rating
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input field-checkbox" type="checkbox" value="monthly_income" id="field_monthly_income">
+                                    <label class="form-check-label" for="field_monthly_income">
+                                        Monthly Income
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input field-checkbox" type="checkbox" value="employment_status" id="field_employment_status">
+                                    <label class="form-check-label" for="field_employment_status">
+                                        Employment Status
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Options -->
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="card border-secondary">
+                            <div class="card-header bg-secondary text-white">
+                                <strong><i class="fa fa-cog me-2"></i>Additional Options</strong>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="include_stats" checked>
+                                    <label class="form-check-label" for="include_stats">
+                                        Include statistics summary
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="landscape">
+                                    <label class="form-check-label" for="landscape">
+                                        Landscape orientation (for more columns)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-primary" onclick="generateAndPrint()">
+                    <i class="fa fa-print me-1"></i>Print
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// ============================================================================
+// HTMX EVENT LISTENERS - UPDATE STATS
+// ============================================================================
+
+document.body.addEventListener('htmx:afterSwap', function(event) {
+    if (event.detail.target.id === 'member-results') {
+        const firstRow = event.detail.target.querySelector('tr[data-stats]');
+        
+        if (firstRow) {
+            const stats = JSON.parse(firstRow.dataset.stats);
+            
+            // Update stats with smooth transition
+            updateStatValue('statTotal', stats.total || 0);
+            updateStatValue('statActive', stats.active || 0);
+            updateStatValue('statActivePct', stats.active_percentage || 0);
+            updateStatValue('statPending', stats.pending_approval || 0);
+            updateStatValue('statCreditScore', Math.round(stats.avg_credit_score || 0));
+        }
+    }
+});
+
+// Helper function to update stat values with animation
+function updateStatValue(elementId, newValue) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.style.transition = 'opacity 0.2s ease-in-out';
+        element.style.opacity = '0.5';
+        
+        setTimeout(() => {
+            element.textContent = newValue;
+            element.style.opacity = '1';
+        }, 200);
+    }
+}
+
+// ============================================================================
+// PRINT FUNCTIONALITY - DIRECT PRINT PREVIEW
+// ============================================================================
+
+function generateAndPrint() {
+    // Validate at least one field is selected
+    const checkedFields = document.querySelectorAll('.field-checkbox:checked');
+    if (checkedFields.length === 0) {
+        alert('Please select at least one field to include in the print view.');
+        return;
+    }
+    
+    // Show loading indicator
+    const printBtn = event.target;
+    const originalText = printBtn.innerHTML;
+    printBtn.innerHTML = '<i class="fa fa-spinner fa-spin me-1"></i>Generating...';
+    printBtn.disabled = true;
+    
+    // Get selected fields
+    const selectedFields = Array.from(checkedFields).map(cb => cb.value);
+    
+    // Get options
+    const includeStats = document.getElementById('include_stats').checked;
+    const landscape = document.getElementById('landscape').checked;
+    
+    // Build query parameters (preserve current filters)
+    const params = new URLSearchParams();
+    params.append('q', '{{ request.GET.q|default:"" }}');
+    params.append('status', '{{ request.GET.status|default:"" }}');
+    params.append('member_category', '{{ request.GET.member_category|default:"" }}');
+    params.append('membership_plan', '{{ request.GET.membership_plan|default:"" }}');
+    params.append('gender', '{{ request.GET.gender|default:"" }}');
+    params.append('kyc_status', '{{ request.GET.kyc_status|default:"" }}');
+    params.append('risk_rating', '{{ request.GET.risk_rating|default:"" }}');
+    params.append('employment_status', '{{ request.GET.employment_status|default:"" }}');
+    
+    // Add selected fields
+    selectedFields.forEach(field => params.append('fields', field));
+    
+    // Add options
+    if (includeStats) params.append('include_stats', 'true');
+    if (landscape) params.append('landscape', 'true');
+    params.append('direct_print', 'true');  // Signal to return HTML for printing
+    
+    // Fetch the print HTML
+    fetch(`{% url 'members:member_print_view' %}?${params.toString()}`)
+        .then(response => response.text())
+        .then(html => {
+            // Create a hidden iframe
+            let printFrame = document.getElementById('print-frame');
+            if (!printFrame) {
+                printFrame = document.createElement('iframe');
+                printFrame.id = 'print-frame';
+                printFrame.style.display = 'none';
+                document.body.appendChild(printFrame);
+            }
+            
+            // Write HTML to iframe
+            const frameDoc = printFrame.contentWindow.document;
+            frameDoc.open();
+            frameDoc.write(html);
+            frameDoc.close();
+            
+            // Wait for content to load, then print
+            printFrame.onload = function() {
+                setTimeout(() => {
+                    printFrame.contentWindow.focus();
+                    printFrame.contentWindow.print();
+                    
+                    // Close modal and restore button
+                    bootstrap.Modal.getInstance(document.getElementById('printModal')).hide();
+                    printBtn.innerHTML = originalText;
+                    printBtn.disabled = false;
+                }, 500);
+            };
+        })
+        .catch(error => {
+            console.error('Print error:', error);
+            alert('Error generating print view. Please try again.');
+            printBtn.innerHTML = originalText;
+            printBtn.disabled = false;
+        });
+}
+
+// ============================================================================
+// PRINT MODAL FIELD SELECTION
+// ============================================================================
+
+function selectAllFields() {
+    document.querySelectorAll('.field-checkbox').forEach(checkbox => {
+        checkbox.checked = true;
+    });
+}
+
+function deselectAllFields() {
+    document.querySelectorAll('.field-checkbox').forEach(checkbox => {
+        checkbox.checked = false;
+    });
+}
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+function resetFilters() {
+    window.location.href = "{% url 'members:member_list' %}";
+}
+
+// Initialize Bootstrap tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

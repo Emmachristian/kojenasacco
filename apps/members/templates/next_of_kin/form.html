@@ -1,0 +1,982 @@
+{% extends "base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        border: none;
+    }
+    
+    .section-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px 8px 0 0;
+        margin: 0;
+    }
+    
+    .section-header h6 {
+        margin: 0;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    
+    .section-header p {
+        margin: 5px 0 0 0;
+        opacity: 0.9;
+        font-size: 0.9rem;
+    }
+    
+    .section-body {
+        padding: 25px;
+    }
+    
+    .form-floating {
+        margin-bottom: 1.2rem;
+    }
+    
+    .form-floating label {
+        color: #6c757d;
+        font-weight: 500;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.15);
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+        font-weight: bold;
+    }
+    
+    .form-help {
+        background-color: #e3f2fd;
+        border-left: 4px solid #2196f3;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+    }
+    
+    .form-help h6 {
+        color: #1976d2;
+        margin-bottom: 10px;
+    }
+    
+    .member-info-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-left: 4px solid #667eea;
+    }
+    
+    .member-info-label {
+        font-weight: 600;
+        color: #495057;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+    
+    .member-info-value {
+        font-size: 1.2rem;
+        color: #212529;
+        font-weight: 500;
+    }
+    
+    .member-detail-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    .member-detail-row i {
+        color: #667eea;
+        width: 20px;
+    }
+    
+    .member-detail-row span {
+        color: #495057;
+    }
+    
+    .btn-save-group {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        margin-top: 20px;
+    }
+    
+    .error-summary {
+        background-color: #f8d7da;
+        border-left: 4px solid #dc3545;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+    }
+    
+    .error-summary h6 {
+        color: #721c24;
+        margin-bottom: 10px;
+    }
+    
+    .error-list {
+        margin: 0;
+        padding-left: 20px;
+        color: #721c24;
+    }
+    
+    .invalid-feedback {
+        display: block;
+        font-size: 0.875rem;
+    }
+    
+    .is-invalid {
+        border-color: #dc3545;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right calc(0.375em + 0.1875rem) center;
+        background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+    }
+    
+    .designation-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 15px;
+    }
+    
+    .designation-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    
+    .badge-primary {
+        background-color: #667eea;
+        color: white;
+    }
+    
+    .badge-emergency {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    .badge-beneficiary {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .checkbox-group {
+        background-color: #f8f9fa;
+        border-radius: 6px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .form-check {
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .form-check-label {
+        font-weight: 500;
+        color: #495057;
+        cursor: pointer;
+    }
+    
+    .form-check-input {
+        width: 1.2em;
+        height: 1.2em;
+        margin-right: 10px;
+        cursor: pointer;
+    }
+    
+    .form-check-input:checked {
+        background-color: #667eea;
+        border-color: #667eea;
+    }
+    
+    .beneficiary-percentage-group {
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 15px;
+        display: none;
+    }
+    
+    .beneficiary-percentage-group.show {
+        display: block;
+    }
+    
+    .percentage-info {
+        background-color: white;
+        border-radius: 6px;
+        padding: 10px;
+        margin-top: 10px;
+        font-size: 0.9rem;
+        color: #495057;
+    }
+    
+    @media (max-width: 768px) {
+        .section-body {
+            padding: 15px;
+        }
+        
+        .btn-save-group {
+            padding: 15px;
+        }
+        
+        .member-info-card {
+            padding: 15px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="app-page-title">
+    <div class="page-title-wrapper">
+        <div class="page-title-heading">
+            <div class="page-title-icon">
+                <i class="pe-7s-user icon-gradient bg-mean-fruit"></i>
+            </div>
+            <div>
+                {{ title }}
+                <div class="page-title-subheading">
+                    {% if nok %}
+                        Update next of kin information for {{ member.get_full_name }}
+                    {% else %}
+                        Add a new next of kin for {{ member.get_full_name }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="page-title-actions">
+            <a href="{% url 'members:member_profile' member.pk %}" class="btn btn-outline-secondary">
+                <i class="fa fa-arrow-left me-1"></i> Back to Member Profile
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Member Information Card -->
+<div class="member-info-card">
+    <div class="member-info-label">
+        <i class="fa fa-user me-1"></i> Adding Next of Kin For
+    </div>
+    <div class="member-info-value">
+        {{ member.get_full_name }}
+    </div>
+    <div class="member-detail-row">
+        <i class="fa fa-id-card"></i>
+        <span><strong>Member Number:</strong> {{ member.member_number }}</span>
+    </div>
+    <div class="member-detail-row">
+        <i class="fa fa-phone"></i>
+        <span><strong>Phone:</strong> {{ member.phone_primary }}</span>
+    </div>
+    {% if member.personal_email %}
+    <div class="member-detail-row">
+        <i class="fa fa-envelope"></i>
+        <span><strong>Email:</strong> {{ member.personal_email }}</span>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Form Help Section -->
+<div class="form-help">
+    <h6><i class="fa fa-info-circle me-1"></i> Next of Kin Guidelines</h6>
+    <div class="row">
+        <div class="col-md-6">
+            <ul class="mb-0">
+                <li><strong>Required fields</strong> are marked with an asterisk (*)</li>
+                <li><strong>Primary next of kin</strong> is the main contact person</li>
+                <li><strong>Emergency contact</strong> can be reached in urgent situations</li>
+            </ul>
+        </div>
+        <div class="col-md-6">
+            <ul class="mb-0">
+                <li><strong>Beneficiary</strong> receives benefits from member's estate</li>
+                <li><strong>Beneficiary percentage</strong> must total 100% across all beneficiaries</li>
+                <li><strong>ID number</strong> is recommended for verification purposes</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Error Display Section -->
+{% if form.errors or form.non_field_errors %}
+<div class="error-summary">
+    <h6><i class="fa fa-exclamation-triangle me-2"></i>Please correct the following errors:</h6>
+    
+    {% if form.non_field_errors %}
+        <div class="mb-3">
+            <strong>Form Errors:</strong>
+            <ul class="error-list">
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+    
+    {% if form.errors %}
+        <div class="mb-3">
+            <strong>Field Errors:</strong>
+            <ul class="error-list">
+                {% for field, errors in form.errors.items %}
+                    {% if field != '__all__' %}
+                        <li><strong>{{ field|title }}:</strong>
+                            {% for error in errors %}
+                                {{ error }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Main Form -->
+<form method="post" id="nokForm" novalidate>
+    {% csrf_token %}
+    
+    <!-- Personal Information Section -->
+    <div class="form-section">
+        <div class="section-header">
+            <h6><i class="fa fa-user me-2"></i>Personal Information</h6>
+            <p>Basic details about the next of kin</p>
+        </div>
+        <div class="section-body">
+            <div class="row">
+                <!-- Full Name -->
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        {{ form.name|add_class:"form-control"|attr:"placeholder:Full Name" }}
+                        <label for="{{ form.name.id_for_label }}" class="required-field">Full Name</label>
+                        {% if form.name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.name.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Full legal name of next of kin</small>
+                    </div>
+                </div>
+
+                <!-- Relationship -->
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        {{ form.relation|add_class:"form-select"|attr:"placeholder:Relationship" }}
+                        <label for="{{ form.relation.id_for_label }}" class="required-field">Relationship</label>
+                        {% if form.relation.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.relation.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">How is this person related to the member?</small>
+                    </div>
+                </div>
+
+                <!-- ID Number -->
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        {{ form.id_number|add_class:"form-control"|attr:"placeholder:ID Number" }}
+                        <label for="{{ form.id_number.id_for_label }}">
+                            <i class="fa fa-id-card me-1"></i> ID Number
+                        </label>
+                        {% if form.id_number.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.id_number.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">National ID, Passport, or other identification</small>
+                    </div>
+                </div>
+
+                <!-- Date of Birth -->
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        {{ form.date_of_birth|add_class:"form-control"|attr:"placeholder:Date of Birth"|attr:"type:date" }}
+                        <label for="{{ form.date_of_birth.id_for_label }}">
+                            <i class="fa fa-birthday-cake me-1"></i> Date of Birth
+                        </label>
+                        {% if form.date_of_birth.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.date_of_birth.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Optional - for age verification</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Information Section -->
+    <div class="form-section">
+        <div class="section-header">
+            <h6><i class="fa fa-address-book me-2"></i>Contact Information</h6>
+            <p>How to reach this person</p>
+        </div>
+        <div class="section-body">
+            <div class="row">
+                <!-- Phone Number -->
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        {{ form.contact|add_class:"form-control"|attr:"placeholder:Phone Number" }}
+                        <label for="{{ form.contact.id_for_label }}" class="required-field">
+                            <i class="fa fa-phone me-1"></i> Phone Number
+                        </label>
+                        {% if form.contact.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.contact.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Primary contact number</small>
+                    </div>
+                </div>
+
+                <!-- Email Address -->
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        {{ form.email|add_class:"form-control"|attr:"placeholder:Email Address"|attr:"type:email" }}
+                        <label for="{{ form.email.id_for_label }}">
+                            <i class="fa fa-envelope me-1"></i> Email Address
+                        </label>
+                        {% if form.email.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.email.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Optional email address</small>
+                    </div>
+                </div>
+
+                <!-- Physical Address -->
+                <div class="col-12">
+                    <div class="form-floating">
+                        {{ form.address|add_class:"form-control"|attr:"placeholder:Physical Address"|attr:"style:height: 100px" }}
+                        <label for="{{ form.address.id_for_label }}">
+                            <i class="fa fa-map-marker-alt me-1"></i> Physical Address
+                        </label>
+                        {% if form.address.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.address.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Residential address of next of kin</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Designation Section -->
+    <div class="form-section">
+        <div class="section-header">
+            <h6><i class="fa fa-tags me-2"></i>Designation & Roles</h6>
+            <p>Define the role and importance of this next of kin</p>
+        </div>
+        <div class="section-body">
+            <div class="checkbox-group">
+                <div class="form-check">
+                    {{ form.is_primary|add_class:"form-check-input" }}
+                    <label class="form-check-label" for="{{ form.is_primary.id_for_label }}">
+                        <i class="fa fa-star text-warning me-1"></i>
+                        <strong>Primary Next of Kin</strong>
+                        <div class="text-muted" style="font-size: 0.85rem; font-weight: normal;">
+                            This is the main contact person. Only one next of kin can be primary.
+                        </div>
+                    </label>
+                    {% if form.is_primary.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.is_primary.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-check">
+                    {{ form.is_emergency_contact|add_class:"form-check-input" }}
+                    <label class="form-check-label" for="{{ form.is_emergency_contact.id_for_label }}">
+                        <i class="fa fa-ambulance text-danger me-1"></i>
+                        <strong>Emergency Contact</strong>
+                        <div class="text-muted" style="font-size: 0.85rem; font-weight: normal;">
+                            Can be contacted in case of emergency situations.
+                        </div>
+                    </label>
+                    {% if form.is_emergency_contact.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.is_emergency_contact.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-check">
+                    {{ form.is_beneficiary|add_class:"form-check-input" }}
+                    <label class="form-check-label" for="{{ form.is_beneficiary.id_for_label }}">
+                        <i class="fa fa-gift text-success me-1"></i>
+                        <strong>Beneficiary</strong>
+                        <div class="text-muted" style="font-size: 0.85rem; font-weight: normal;">
+                            This person will receive benefits from the member's estate.
+                        </div>
+                    </label>
+                    {% if form.is_beneficiary.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.is_beneficiary.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Beneficiary Percentage (shown only when beneficiary is checked) -->
+            <div class="beneficiary-percentage-group" id="beneficiaryPercentageGroup">
+                <div class="form-floating">
+                    {{ form.beneficiary_percentage|add_class:"form-control"|attr:"placeholder:Beneficiary Percentage"|attr:"type:number"|attr:"step:0.01"|attr:"min:0"|attr:"max:100" }}
+                    <label for="{{ form.beneficiary_percentage.id_for_label }}">
+                        <i class="fa fa-percent me-1"></i> Beneficiary Percentage
+                    </label>
+                    {% if form.beneficiary_percentage.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.beneficiary_percentage.errors.0 }}
+                        </div>
+                    {% endif %}
+                    <small class="text-muted">Percentage of benefits allocated (0-100%)</small>
+                </div>
+                
+                <div class="percentage-info">
+                    <i class="fa fa-info-circle text-info me-1"></i>
+                    <strong>Note:</strong> The total allocation across all beneficiaries must equal 100%.
+                    Make sure to allocate percentages appropriately among all beneficiaries.
+                </div>
+            </div>
+
+            <!-- Designation Preview -->
+            <div class="designation-badges" id="designationPreview"></div>
+        </div>
+    </div>
+
+    <!-- Additional Notes Section -->
+    <div class="form-section">
+        <div class="section-header">
+            <h6><i class="fa fa-sticky-note me-2"></i>Additional Notes</h6>
+            <p>Any additional information or special instructions</p>
+        </div>
+        <div class="section-body">
+            <div class="form-floating">
+                {{ form.notes|add_class:"form-control"|attr:"placeholder:Notes"|attr:"style:height: 120px" }}
+                <label for="{{ form.notes.id_for_label }}">Notes</label>
+                {% if form.notes.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.notes.errors.0 }}
+                    </div>
+                {% endif %}
+                <small class="text-muted">Optional additional information about this next of kin</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="btn-save-group">
+        <button type="submit" class="btn btn-primary btn-lg me-2" id="saveButton">
+            <i class="fa fa-save me-2"></i>
+            {% if nok %}Update Next of Kin{% else %}Add Next of Kin{% endif %}
+        </button>
+        <a href="{% url 'members:member_profile' member.pk %}" class="btn btn-outline-secondary btn-lg">
+            <i class="fa fa-times me-2"></i> Cancel
+        </a>
+    </div>
+</form>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ------------------------------------------------------------------------
+    // Form Validation
+    // ------------------------------------------------------------------------
+    const form = document.getElementById('nokForm');
+    
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        // Clear previous validation states
+        document.querySelectorAll('.is-invalid').forEach(el => {
+            el.classList.remove('is-invalid');
+        });
+        
+        // Validate required fields
+        const requiredFields = [
+            { id: 'id_name', name: 'Full Name' },
+            { id: 'id_relation', name: 'Relationship' },
+            { id: 'id_contact', name: 'Phone Number' },
+        ];
+        
+        requiredFields.forEach(field => {
+            const element = document.getElementById(field.id);
+            if (element && !element.value.trim()) {
+                element.classList.add('is-invalid');
+                isValid = false;
+            }
+        });
+        
+        // Validate phone number format
+        const phoneField = document.getElementById('id_contact');
+        if (phoneField && phoneField.value) {
+            const phoneRegex = /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/;
+            if (!phoneRegex.test(phoneField.value.replace(/\s/g, ''))) {
+                phoneField.classList.add('is-invalid');
+                alert('Please enter a valid phone number');
+                isValid = false;
+            }
+        }
+        
+        // Validate email format if provided
+        const emailField = document.getElementById('id_email');
+        if (emailField && emailField.value) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(emailField.value)) {
+                emailField.classList.add('is-invalid');
+                alert('Please enter a valid email address');
+                isValid = false;
+            }
+        }
+        
+        // Validate beneficiary percentage
+        const isBeneficiary = document.getElementById('id_is_beneficiary').checked;
+        const percentageField = document.getElementById('id_beneficiary_percentage');
+        
+        if (isBeneficiary && percentageField) {
+            const percentage = parseFloat(percentageField.value);
+            if (isNaN(percentage) || percentage <= 0 || percentage > 100) {
+                percentageField.classList.add('is-invalid');
+                alert('Beneficiary percentage must be between 0 and 100');
+                isValid = false;
+            }
+        }
+        
+        // Validate date of birth
+        const dobField = document.getElementById('id_date_of_birth');
+        if (dobField && dobField.value) {
+            const dob = new Date(dobField.value);
+            const today = new Date();
+            const age = today.getFullYear() - dob.getFullYear();
+            
+            if (dob > today) {
+                dobField.classList.add('is-invalid');
+                alert('Date of birth cannot be in the future');
+                isValid = false;
+            } else if (age > 120) {
+                dobField.classList.add('is-invalid');
+                alert('Please enter a valid date of birth');
+                isValid = false;
+            }
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            // Scroll to first error
+            const firstError = document.querySelector('.is-invalid');
+            if (firstError) {
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                firstError.focus();
+            }
+        }
+    });
+    
+    // ------------------------------------------------------------------------
+    // Beneficiary Percentage Toggle
+    // ------------------------------------------------------------------------
+    const beneficiaryCheckbox = document.getElementById('id_is_beneficiary');
+    const percentageGroup = document.getElementById('beneficiaryPercentageGroup');
+    const percentageField = document.getElementById('id_beneficiary_percentage');
+    
+    function toggleBeneficiaryPercentage() {
+        if (beneficiaryCheckbox.checked) {
+            percentageGroup.classList.add('show');
+            percentageField.setAttribute('required', 'required');
+        } else {
+            percentageGroup.classList.remove('show');
+            percentageField.removeAttribute('required');
+            percentageField.value = '0.00';
+        }
+        updateDesignationPreview();
+    }
+    
+    beneficiaryCheckbox.addEventListener('change', toggleBeneficiaryPercentage);
+    
+    // Initialize on page load
+    toggleBeneficiaryPercentage();
+    
+    // ------------------------------------------------------------------------
+    // Designation Preview
+    // ------------------------------------------------------------------------
+    function updateDesignationPreview() {
+        const isPrimary = document.getElementById('id_is_primary').checked;
+        const isEmergency = document.getElementById('id_is_emergency_contact').checked;
+        const isBeneficiary = document.getElementById('id_is_beneficiary').checked;
+        const percentage = document.getElementById('id_beneficiary_percentage').value;
+        const preview = document.getElementById('designationPreview');
+        
+        let html = '';
+        
+        if (isPrimary) {
+            html += `
+                <div class="designation-badge badge-primary">
+                    <i class="fa fa-star"></i>
+                    <span>Primary Next of Kin</span>
+                </div>
+            `;
+        }
+        
+        if (isEmergency) {
+            html += `
+                <div class="designation-badge badge-emergency">
+                    <i class="fa fa-ambulance"></i>
+                    <span>Emergency Contact</span>
+                </div>
+            `;
+        }
+        
+        if (isBeneficiary) {
+            const percentText = percentage ? `${parseFloat(percentage).toFixed(2)}%` : '0%';
+            html += `
+                <div class="designation-badge badge-beneficiary">
+                    <i class="fa fa-gift"></i>
+                    <span>Beneficiary (${percentText})</span>
+                </div>
+            `;
+        }
+        
+        preview.innerHTML = html;
+    }
+    
+    document.getElementById('id_is_primary').addEventListener('change', updateDesignationPreview);
+    document.getElementById('id_is_emergency_contact').addEventListener('change', updateDesignationPreview);
+    document.getElementById('id_is_beneficiary').addEventListener('change', updateDesignationPreview);
+    document.getElementById('id_beneficiary_percentage').addEventListener('input', updateDesignationPreview);
+    
+    // Initialize designation preview
+    updateDesignationPreview();
+    
+    // ------------------------------------------------------------------------
+    // Real-time field validation
+    // ------------------------------------------------------------------------
+    document.querySelectorAll('input, select, textarea').forEach(field => {
+        field.addEventListener('blur', function() {
+            if (this.hasAttribute('required') || this.classList.contains('required-field')) {
+                if (!this.value.trim()) {
+                    this.classList.add('is-invalid');
+                } else {
+                    this.classList.remove('is-invalid');
+                }
+            }
+        });
+        
+        field.addEventListener('input', function() {
+            if (this.classList.contains('is-invalid') && this.value.trim()) {
+                this.classList.remove('is-invalid');
+            }
+        });
+    });
+    
+    // ------------------------------------------------------------------------
+    // Phone Number Formatting
+    // ------------------------------------------------------------------------
+    const phoneField = document.getElementById('id_contact');
+    if (phoneField) {
+        phoneField.addEventListener('input', function(e) {
+            // Remove non-numeric characters except + at the start
+            let value = this.value.replace(/[^\d+]/g, '');
+            
+            // Ensure + is only at the start
+            if (value.includes('+')) {
+                value = '+' + value.replace(/\+/g, '');
+            }
+            
+            this.value = value;
+        });
+    }
+    
+    // ------------------------------------------------------------------------
+    // Percentage Field Formatting
+    // ------------------------------------------------------------------------
+    const percentageField = document.getElementById('id_beneficiary_percentage');
+    if (percentageField) {
+        percentageField.addEventListener('blur', function() {
+            if (this.value) {
+                const value = parseFloat(this.value);
+                if (!isNaN(value)) {
+                    this.value = Math.min(100, Math.max(0, value)).toFixed(2);
+                    updateDesignationPreview();
+                }
+            }
+        });
+        
+        percentageField.addEventListener('input', function() {
+            // Prevent entering more than 100
+            if (parseFloat(this.value) > 100) {
+                this.value = '100.00';
+            }
+            updateDesignationPreview();
+        });
+    }
+    
+    // ------------------------------------------------------------------------
+    // Name Field Capitalization
+    // ------------------------------------------------------------------------
+    const nameField = document.getElementById('id_name');
+    if (nameField) {
+        nameField.addEventListener('blur', function() {
+            // Capitalize first letter of each word
+            this.value = this.value
+                .toLowerCase()
+                .split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+        });
+    }
+    
+    // ------------------------------------------------------------------------
+    // Relationship Field Change Handler
+    // ------------------------------------------------------------------------
+    const relationField = document.getElementById('id_relation');
+    if (relationField) {
+        relationField.addEventListener('change', function() {
+            // Remove validation error on change
+            this.classList.remove('is-invalid');
+        });
+    }
+    
+    // ------------------------------------------------------------------------
+    // Form Dirty State Tracking
+    // ------------------------------------------------------------------------
+    let formDirty = false;
+    
+    form.addEventListener('input', function() {
+        formDirty = true;
+    });
+    
+    form.addEventListener('change', function() {
+        formDirty = true;
+    });
+    
+    // Warn user before leaving if form has unsaved changes
+    window.addEventListener('beforeunload', function(e) {
+        if (formDirty) {
+            e.preventDefault();
+            e.returnValue = '';
+            return '';
+        }
+    });
+    
+    // Don't warn on form submission
+    form.addEventListener('submit', function() {
+        formDirty = false;
+    });
+    
+    // ------------------------------------------------------------------------
+    // Character Counter for Notes Field
+    // ------------------------------------------------------------------------
+    const notesField = document.getElementById('id_notes');
+    if (notesField) {
+        const maxLength = 500;
+        
+        // Create counter element
+        const counterDiv = document.createElement('div');
+        counterDiv.className = 'text-muted text-end';
+        counterDiv.style.fontSize = '0.85rem';
+        counterDiv.style.marginTop = '5px';
+        notesField.parentElement.appendChild(counterDiv);
+        
+        function updateCounter() {
+            const remaining = maxLength - notesField.value.length;
+            counterDiv.textContent = `${notesField.value.length} / ${maxLength} characters`;
+            
+            if (remaining < 50) {
+                counterDiv.style.color = '#dc3545';
+            } else if (remaining < 100) {
+                counterDiv.style.color = '#ffc107';
+            } else {
+                counterDiv.style.color = '#6c757d';
+            }
+        }
+        
+        notesField.addEventListener('input', updateCounter);
+        
+        // Set max length
+        notesField.setAttribute('maxlength', maxLength);
+        
+        // Initialize counter
+        updateCounter();
+    }
+    
+    // ------------------------------------------------------------------------
+    // Auto-focus First Field
+    // ------------------------------------------------------------------------
+    const firstInput = form.querySelector('input:not([type="hidden"]), select, textarea');
+    if (firstInput) {
+        setTimeout(() => {
+            firstInput.focus();
+        }, 300);
+    }
+    
+    // ------------------------------------------------------------------------
+    // Submit Button Loading State
+    // ------------------------------------------------------------------------
+    const saveButton = document.getElementById('saveButton');
+    
+    form.addEventListener('submit', function(e) {
+        if (!form.classList.contains('was-validated')) {
+            saveButton.disabled = true;
+            saveButton.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i> Saving...';
+            
+            // Re-enable after 3 seconds in case of errors
+            setTimeout(() => {
+                saveButton.disabled = false;
+                saveButton.innerHTML = '<i class="fa fa-save me-2"></i> {% if nok %}Update Next of Kin{% else %}Add Next of Kin{% endif %}';
+            }, 3000);
+        }
+    });
+    
+    // ------------------------------------------------------------------------
+    // Keyboard Shortcuts
+    // ------------------------------------------------------------------------
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + S to save
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            form.submit();
+        }
+        
+        // Escape to cancel
+        if (e.key === 'Escape') {
+            const cancelButton = document.querySelector('a.btn-outline-secondary');
+            if (cancelButton && confirm('Are you sure you want to cancel? Any unsaved changes will be lost.')) {
+                window.location.href = cancelButton.href;
+            }
+        }
+    });
+    
+    console.log('Next of Kin Form JavaScript loaded successfully');
+});
+</script>
+{% endblock %}

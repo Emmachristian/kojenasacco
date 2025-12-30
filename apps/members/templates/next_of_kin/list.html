@@ -1,0 +1,998 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block extra_css %}
+<style>
+    .page-header-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 30px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        color: white;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .page-header-section h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+    
+    .page-header-section p {
+        opacity: 0.95;
+        font-size: 1.05rem;
+        margin-bottom: 0;
+    }
+    
+    .stats-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border-left: 4px solid #667eea;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .stats-card .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 15px;
+    }
+    
+    .stats-card .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #212529;
+        margin-bottom: 5px;
+    }
+    
+    .stats-card .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .filter-section {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        margin-bottom: 25px;
+    }
+    
+    .filter-section h6 {
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: #495057;
+    }
+    
+    .nok-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border-left: 4px solid #dee2e6;
+    }
+    
+    .nok-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transform: translateX(5px);
+    }
+    
+    .nok-card.primary {
+        border-left-color: #667eea;
+        background: linear-gradient(to right, rgba(102, 126, 234, 0.05) 0%, white 20%);
+    }
+    
+    .nok-card.emergency {
+        border-left-color: #dc3545;
+    }
+    
+    .nok-card.beneficiary {
+        border-left-color: #28a745;
+    }
+    
+    .nok-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 15px;
+    }
+    
+    .nok-name {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #212529;
+        margin-bottom: 5px;
+    }
+    
+    .nok-relation {
+        color: #6c757d;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .nok-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+    
+    .nok-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .nok-badge.badge-primary-nok {
+        background-color: #667eea;
+        color: white;
+    }
+    
+    .nok-badge.badge-emergency-nok {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    .nok-badge.badge-beneficiary-nok {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .nok-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .nok-detail-item {
+        display: flex;
+        align-items: start;
+        gap: 10px;
+    }
+    
+    .nok-detail-item i {
+        color: #667eea;
+        width: 20px;
+        margin-top: 3px;
+    }
+    
+    .nok-detail-content {
+        flex: 1;
+    }
+    
+    .nok-detail-label {
+        font-size: 0.75rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 2px;
+    }
+    
+    .nok-detail-value {
+        font-size: 0.9rem;
+        color: #212529;
+        font-weight: 500;
+    }
+    
+    .nok-member-info {
+        background-color: #f8f9fa;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 12px;
+    }
+    
+    .nok-member-name {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 5px;
+    }
+    
+    .nok-member-number {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    
+    .nok-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+    
+    .empty-state-icon {
+        font-size: 4rem;
+        color: #dee2e6;
+        margin-bottom: 20px;
+    }
+    
+    .empty-state h4 {
+        color: #495057;
+        margin-bottom: 10px;
+    }
+    
+    .empty-state p {
+        color: #6c757d;
+        margin-bottom: 25px;
+    }
+    
+    .pagination-wrapper {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        margin-top: 20px;
+    }
+    
+    .search-box {
+        position: relative;
+    }
+    
+    .search-box input {
+        padding-left: 45px;
+        border-radius: 25px;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+    
+    .search-box input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+    }
+    
+    .search-box i {
+        position: absolute;
+        left: 18px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+    }
+    
+    @media (max-width: 768px) {
+        .nok-header {
+            flex-direction: column;
+        }
+        
+        .nok-details {
+            grid-template-columns: 1fr;
+        }
+        
+        .stats-card {
+            margin-bottom: 15px;
+        }
+        
+        .nok-actions {
+            flex-direction: column;
+        }
+        
+        .nok-actions .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="app-page-title">
+    <div class="page-title-wrapper">
+        <div class="page-title-heading">
+            <div class="page-title-icon">
+                <i class="pe-7s-user icon-gradient bg-mean-fruit"></i>
+            </div>
+            <div>
+                Next of Kin
+                <div class="page-title-subheading">
+                    Manage next of kin and beneficiary information for all members
+                </div>
+            </div>
+        </div>
+        <div class="page-title-actions">
+            <div class="dropdown">
+                <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="fa fa-plus me-1"></i> Add Next of Kin
+                </button>
+                <div class="dropdown-menu dropdown-menu-end">
+                    <h6 class="dropdown-header">Select Member</h6>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="#" onclick="alert('Please select a member from the members list first'); return false;">
+                        <i class="fa fa-info-circle me-2"></i> Select from Members List
+                    </a>
+                </div>
+            </div>
+            <div class="dropdown ms-2">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="fa fa-download me-1"></i> Export
+                </button>
+                <div class="dropdown-menu dropdown-menu-end">
+                    <a class="dropdown-item" href="#">
+                        <i class="fa fa-file-excel me-2 text-success"></i> Export to Excel
+                    </a>
+                    <a class="dropdown-item" href="#">
+                        <i class="fa fa-file-pdf me-2 text-danger"></i> Export to PDF
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="#">
+                        <i class="fa fa-file-csv me-2"></i> Export to CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card">
+            <div class="stat-icon" style="background-color: rgba(102, 126, 234, 0.1); color: #667eea;">
+                <i class="fa fa-users"></i>
+            </div>
+            <div class="stat-value">{{ next_of_kin.paginator.count }}</div>
+            <div class="stat-label">Total Next of Kin</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card">
+            <div class="stat-icon" style="background-color: rgba(220, 53, 69, 0.1); color: #dc3545;">
+                <i class="fa fa-ambulance"></i>
+            </div>
+            <div class="stat-value" id="emergencyCount">-</div>
+            <div class="stat-label">Emergency Contacts</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card">
+            <div class="stat-icon" style="background-color: rgba(40, 167, 69, 0.1); color: #28a745;">
+                <i class="fa fa-gift"></i>
+            </div>
+            <div class="stat-value" id="beneficiaryCount">-</div>
+            <div class="stat-label">Beneficiaries</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card">
+            <div class="stat-icon" style="background-color: rgba(255, 193, 7, 0.1); color: #ffc107;">
+                <i class="fa fa-star"></i>
+            </div>
+            <div class="stat-value" id="primaryCount">-</div>
+            <div class="stat-label">Primary Contacts</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="filter-section">
+    <h6><i class="fa fa-filter me-2"></i>Filter & Search</h6>
+    <form method="get" id="filterForm">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="search-box">
+                    <i class="fa fa-search"></i>
+                    <input type="text" name="search" class="form-control" placeholder="Search by name, phone, or member..." value="{{ request.GET.search }}">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <select name="relation" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Relations</option>
+                    <option value="SPOUSE" {% if request.GET.relation == 'SPOUSE' %}selected{% endif %}>Spouse</option>
+                    <option value="FATHER" {% if request.GET.relation == 'FATHER' %}selected{% endif %}>Father</option>
+                    <option value="MOTHER" {% if request.GET.relation == 'MOTHER' %}selected{% endif %}>Mother</option>
+                    <option value="SON" {% if request.GET.relation == 'SON' %}selected{% endif %}>Son</option>
+                    <option value="DAUGHTER" {% if request.GET.relation == 'DAUGHTER' %}selected{% endif %}>Daughter</option>
+                    <option value="BROTHER" {% if request.GET.relation == 'BROTHER' %}selected{% endif %}>Brother</option>
+                    <option value="SISTER" {% if request.GET.relation == 'SISTER' %}selected{% endif %}>Sister</option>
+                    <option value="OTHER" {% if request.GET.relation == 'OTHER' %}selected{% endif %}>Other</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="is_primary" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Types</option>
+                    <option value="true" {% if request.GET.is_primary == 'true' %}selected{% endif %}>Primary Only</option>
+                    <option value="false" {% if request.GET.is_primary == 'false' %}selected{% endif %}>Non-Primary</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="is_beneficiary" class="form-select" onchange="this.form.submit()">
+                    <option value="">Beneficiary Status</option>
+                    <option value="true" {% if request.GET.is_beneficiary == 'true' %}selected{% endif %}>Beneficiaries</option>
+                    <option value="false" {% if request.GET.is_beneficiary == 'false' %}selected{% endif %}>Non-Beneficiaries</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-fill">
+                        <i class="fa fa-search"></i>
+                    </button>
+                    <a href="{% url 'members:next_of_kin_list' %}" class="btn btn-outline-secondary flex-fill">
+                        <i class="fa fa-sync"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Next of Kin List -->
+{% if next_of_kin %}
+    <div id="nokList">
+        {% for nok in next_of_kin %}
+        <div class="nok-card {% if nok.is_primary %}primary{% elif nok.is_emergency_contact %}emergency{% elif nok.is_beneficiary %}beneficiary{% endif %}" data-nok-id="{{ nok.id }}">
+            <!-- Member Information -->
+            <div class="nok-member-info">
+                <div class="nok-member-name">
+                    <i class="fa fa-user-circle me-1"></i>
+                    Member: {{ nok.member.get_full_name }}
+                </div>
+                <div class="nok-member-number">
+                    Member #{{ nok.member.member_number }}
+                </div>
+            </div>
+            
+            <!-- Next of Kin Header -->
+            <div class="nok-header">
+                <div>
+                    <div class="nok-name">{{ nok.name }}</div>
+                    <div class="nok-relation">
+                        <i class="fa fa-link"></i>
+                        {{ nok.get_relation_display }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Badges -->
+            <div class="nok-badges">
+                {% if nok.is_primary %}
+                <span class="nok-badge badge-primary-nok">
+                    <i class="fa fa-star"></i> Primary
+                </span>
+                {% endif %}
+                
+                {% if nok.is_emergency_contact %}
+                <span class="nok-badge badge-emergency-nok">
+                    <i class="fa fa-ambulance"></i> Emergency Contact
+                </span>
+                {% endif %}
+                
+                {% if nok.is_beneficiary %}
+                <span class="nok-badge badge-beneficiary-nok">
+                    <i class="fa fa-gift"></i> Beneficiary ({{ nok.beneficiary_percentage }}%)
+                </span>
+                {% endif %}
+            </div>
+            
+            <!-- Details -->
+            <div class="nok-details">
+                <div class="nok-detail-item">
+                    <i class="fa fa-phone"></i>
+                    <div class="nok-detail-content">
+                        <div class="nok-detail-label">Phone</div>
+                        <div class="nok-detail-value">{{ nok.contact }}</div>
+                    </div>
+                </div>
+                
+                {% if nok.email %}
+                <div class="nok-detail-item">
+                    <i class="fa fa-envelope"></i>
+                    <div class="nok-detail-content">
+                        <div class="nok-detail-label">Email</div>
+                        <div class="nok-detail-value">{{ nok.email }}</div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if nok.id_number %}
+                <div class="nok-detail-item">
+                    <i class="fa fa-id-card"></i>
+                    <div class="nok-detail-content">
+                        <div class="nok-detail-label">ID Number</div>
+                        <div class="nok-detail-value">{{ nok.id_number }}</div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if nok.age %}
+                <div class="nok-detail-item">
+                    <i class="fa fa-birthday-cake"></i>
+                    <div class="nok-detail-content">
+                        <div class="nok-detail-label">Age</div>
+                        <div class="nok-detail-value">{{ nok.age }} years</div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if nok.address %}
+                <div class="nok-detail-item">
+                    <i class="fa fa-map-marker-alt"></i>
+                    <div class="nok-detail-content">
+                        <div class="nok-detail-label">Address</div>
+                        <div class="nok-detail-value">{{ nok.address|truncatewords:10 }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Actions -->
+            <div class="nok-actions">
+                <a href="{% url 'members:member_profile' nok.member.pk %}" class="btn btn-sm btn-outline-primary">
+                    <i class="fa fa-user me-1"></i> View Member
+                </a>
+                <a href="{% url 'members:next_of_kin_edit' nok.pk %}" class="btn btn-sm btn-primary">
+                    <i class="fa fa-edit me-1"></i> Edit
+                </a>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDelete('{{ nok.pk }}', '{{ nok.name }}')">
+                    <i class="fa fa-trash me-1"></i> Delete
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if next_of_kin.has_other_pages %}
+    <div class="pagination-wrapper">
+        <nav aria-label="Next of Kin pagination">
+            <ul class="pagination justify-content-center mb-0">
+                {% if next_of_kin.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.relation %}&relation={{ request.GET.relation }}{% endif %}">
+                        <i class="fa fa-angle-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ next_of_kin.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.relation %}&relation={{ request.GET.relation }}{% endif %}">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link">
+                        Page {{ next_of_kin.number }} of {{ next_of_kin.paginator.num_pages }}
+                    </span>
+                </li>
+                
+                {% if next_of_kin.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ next_of_kin.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.relation %}&relation={{ request.GET.relation }}{% endif %}">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ next_of_kin.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.relation %}&relation={{ request.GET.relation }}{% endif %}">
+                        <i class="fa fa-angle-double-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        
+        <div class="text-center mt-3 text-muted">
+            Showing {{ next_of_kin.start_index }} to {{ next_of_kin.end_index }} of {{ next_of_kin.paginator.count }} entries
+        </div>
+    </div>
+    {% endif %}
+    
+{% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <i class="fa fa-users"></i>
+        </div>
+        <h4>No Next of Kin Found</h4>
+        <p>There are no next of kin records {% if request.GET.search %}matching your search{% else %}in the system yet{% endif %}.</p>
+        {% if request.GET.search %}
+        <a href="{% url 'members:next_of_kin_list' %}" class="btn btn-outline-primary">
+            <i class="fa fa-sync me-2"></i> Clear Filters
+        </a>
+        {% else %}
+        <a href="{% url 'members:member_list' %}" class="btn btn-primary">
+            <i class="fa fa-user-plus me-2"></i> Add Next of Kin from Members
+        </a>
+        {% endif %}
+    </div>
+{% endif %}
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fa fa-exclamation-triangle me-2"></i> Confirm Delete
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="nokNameToDelete"></strong>?</p>
+                <p class="text-danger mb-0">
+                    <i class="fa fa-info-circle me-1"></i>
+                    This action cannot be undone.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i> Cancel
+                </button>
+                <form method="post" id="deleteForm" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fa fa-trash me-1"></i> Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ------------------------------------------------------------------------
+    // Calculate Statistics
+    // ------------------------------------------------------------------------
+    function calculateStats() {
+        const nokCards = document.querySelectorAll('.nok-card');
+        let emergencyCount = 0;
+        let beneficiaryCount = 0;
+        let primaryCount = 0;
+        
+        nokCards.forEach(card => {
+            if (card.querySelector('.badge-emergency-nok')) emergencyCount++;
+            if (card.querySelector('.badge-beneficiary-nok')) beneficiaryCount++;
+            if (card.querySelector('.badge-primary-nok')) primaryCount++;
+        });
+        
+        document.getElementById('emergencyCount').textContent = emergencyCount;
+        document.getElementById('beneficiaryCount').textContent = beneficiaryCount;
+        document.getElementById('primaryCount').textContent = primaryCount;
+    }
+    
+    // Initialize statistics
+    calculateStats();
+    
+    // ------------------------------------------------------------------------
+    // Delete Confirmation
+    // ------------------------------------------------------------------------
+    window.confirmDelete = function(nokId, nokName) {
+        const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        document.getElementById('nokNameToDelete').textContent = nokName;
+        document.getElementById('deleteForm').action = `/members/next-of-kin/${nokId}/delete/`;
+        modal.show();
+    };
+    
+    // ------------------------------------------------------------------------
+    // Search Input Auto-submit with Delay
+    // ------------------------------------------------------------------------
+    let searchTimeout;
+    const searchInput = document.querySelector('input[name="search"]');
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                this.form.submit();
+            }, 800);
+        });
+    }
+    
+    // ------------------------------------------------------------------------
+    // Quick Filter Buttons
+    // ------------------------------------------------------------------------
+    const filterButtons = document.querySelectorAll('[data-filter]');
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const filterType = this.dataset.filter;
+            const filterValue = this.dataset.value;
+            
+            const form = document.getElementById('filterForm');
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = filterType;
+            input.value = filterValue;
+            form.appendChild(input);
+            form.submit();
+        });
+    });
+    
+    // ------------------------------------------------------------------------
+    // Card Animations
+    // ------------------------------------------------------------------------
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry, index) => {
+            if (entry.isIntersecting) {
+                setTimeout(() => {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }, index * 50);
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.1 });
+    
+    document.querySelectorAll('.nok-card').forEach(card => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = 'all 0.3s ease';
+        observer.observe(card);
+    });
+    
+    // ------------------------------------------------------------------------
+    // Keyboard Shortcuts
+    // ------------------------------------------------------------------------
+    document.addEventListener('keydown', function(e) {
+        // Focus search on pressing '/'
+        if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            searchInput?.focus();
+        }
+        
+        // Clear filters on Escape
+        if (e.key === 'Escape' && searchInput === document.activeElement) {
+            searchInput.value = '';
+            searchInput.blur();
+        }
+    });
+    
+    // ------------------------------------------------------------------------
+    // Export Functions
+    // ------------------------------------------------------------------------
+    window.exportToExcel = function() {
+        window.location.href = '/members/export/next-of-kin/excel/';
+    };
+    
+    window.exportToPDF = function() {
+        window.location.href = '/members/export/next-of-kin/pdf/';
+    };
+    
+    window.exportToCSV = function() {
+        window.location.href = '/members/export/next-of-kin/csv/';
+    };
+    
+    // ------------------------------------------------------------------------
+    // Highlight Search Terms
+    // ------------------------------------------------------------------------
+    const searchTerm = '{{ request.GET.search|escapejs }}';
+    if (searchTerm) {
+        const nokCards = document.querySelectorAll('.nok-card');
+        const regex = new RegExp(`(${searchTerm})`, 'gi');
+        
+        nokCards.forEach(card => {
+            const textElements = card.querySelectorAll('.nok-name, .nok-detail-value, .nok-member-name');
+            textElements.forEach(element => {
+                const originalText = element.textContent;
+                if (originalText.toLowerCase().includes(searchTerm.toLowerCase())) {
+                    element.innerHTML = originalText.replace(regex, '<mark style="background-color: #fff3cd; padding: 2px 4px; border-radius: 3px;">$1</mark>');
+                }
+            });
+        });
+    }
+    
+    // ------------------------------------------------------------------------
+    // Smooth Scroll to Top
+    // ------------------------------------------------------------------------
+    const scrollToTopBtn = document.createElement('button');
+    scrollToTopBtn.innerHTML = '<i class="fa fa-arrow-up"></i>';
+    scrollToTopBtn.className = 'btn btn-primary';
+    scrollToTopBtn.style.cssText = `
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: none;
+        z-index: 999;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    `;
+    document.body.appendChild(scrollToTopBtn);
+    
+    window.addEventListener('scroll', function() {
+        if (window.pageYOffset > 300) {
+            scrollToTopBtn.style.display = 'block';
+        } else {
+            scrollToTopBtn.style.display = 'none';
+        }
+    });
+    
+    scrollToTopBtn.addEventListener('click', function() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    
+    // ------------------------------------------------------------------------
+    // Print Functionality
+    // ------------------------------------------------------------------------
+    window.printList = function() {
+        window.print();
+    };
+    
+    // ------------------------------------------------------------------------
+    // Bulk Selection (for future implementation)
+    // ------------------------------------------------------------------------
+    let selectedNOKs = new Set();
+    
+    window.toggleSelection = function(nokId) {
+        if (selectedNOKs.has(nokId)) {
+            selectedNOKs.delete(nokId);
+        } else {
+            selectedNOKs.add(nokId);
+        }
+        updateSelectionUI();
+    };
+    
+    function updateSelectionUI() {
+        // Update UI to show selected items
+        selectedNOKs.forEach(id => {
+            const card = document.querySelector(`[data-nok-id="${id}"]`);
+            if (card) {
+                card.style.borderLeftWidth = '6px';
+            }
+        });
+    }
+    
+    // ------------------------------------------------------------------------
+    // Tooltips Initialization
+    // ------------------------------------------------------------------------
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // ------------------------------------------------------------------------
+    // Copy to Clipboard Functionality
+    // ------------------------------------------------------------------------
+    window.copyToClipboard = function(text, type) {
+        navigator.clipboard.writeText(text).then(() => {
+            // Show toast notification
+            showToast(`${type} copied to clipboard!`, 'success');
+        }).catch(err => {
+            showToast('Failed to copy to clipboard', 'error');
+        });
+    };
+    
+    function showToast(message, type) {
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 250px;';
+        toast.innerHTML = `
+            <i class="fa fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+            ${message}
+        `;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+    
+    // ------------------------------------------------------------------------
+    // Add Click-to-Copy to Phone Numbers and Emails
+    // ------------------------------------------------------------------------
+    document.querySelectorAll('.nok-detail-value').forEach(element => {
+        const parent = element.closest('.nok-detail-item');
+        const icon = parent?.querySelector('i');
+        
+        if (icon && (icon.classList.contains('fa-phone') || icon.classList.contains('fa-envelope'))) {
+            element.style.cursor = 'pointer';
+            element.title = 'Click to copy';
+            
+            element.addEventListener('click', function() {
+                const type = icon.classList.contains('fa-phone') ? 'Phone number' : 'Email';
+                copyToClipboard(this.textContent.trim(), type);
+            });
+        }
+    });
+    
+    // ------------------------------------------------------------------------
+    // Filter Persistence in Session Storage
+    // ------------------------------------------------------------------------
+    const filterForm = document.getElementById('filterForm');
+    if (filterForm) {
+        // Save filter state
+        filterForm.addEventListener('submit', function() {
+            const formData = new FormData(filterForm);
+            const filters = {};
+            for (let [key, value] of formData.entries()) {
+                if (value) filters[key] = value;
+            }
+            sessionStorage.setItem('nokFilters', JSON.stringify(filters));
+        });
+    }
+    
+    // ------------------------------------------------------------------------
+    // Quick Stats Animation
+    // ------------------------------------------------------------------------
+    function animateValue(element, start, end, duration) {
+        const range = end - start;
+        const increment = range / (duration / 16);
+        let current = start;
+        
+        const timer = setInterval(() => {
+            current += increment;
+            if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+                element.textContent = end;
+                clearInterval(timer);
+            } else {
+                element.textContent = Math.floor(current);
+            }
+        }, 16);
+    }
+    
+    // Animate stat counters on page load
+    const statValues = document.querySelectorAll('.stat-value');
+    statValues.forEach(stat => {
+        const finalValue = parseInt(stat.textContent);
+        if (!isNaN(finalValue)) {
+            stat.textContent = '0';
+            setTimeout(() => {
+                animateValue(stat, 0, finalValue, 1000);
+            }, 200);
+        }
+    });
+    
+    // ------------------------------------------------------------------------
+    // Responsive Table Actions for Mobile
+    // ------------------------------------------------------------------------
+    function adjustForMobile() {
+        const isMobile = window.innerWidth < 768;
+        const nokActions = document.querySelectorAll('.nok-actions');
+        
+        nokActions.forEach(actions => {
+            if (isMobile) {
+                actions.style.flexDirection = 'column';
+                actions.querySelectorAll('.btn').forEach(btn => {
+                    btn.classList.add('w-100');
+                });
+            } else {
+                actions.style.flexDirection = 'row';
+                actions.querySelectorAll('.btn').forEach(btn => {
+                    btn.classList.remove('w-100');
+                });
+            }
+        });
+    }
+    
+    adjustForMobile();
+    window.addEventListener('resize', adjustForMobile);
+    
+    console.log('Next of Kin List JavaScript loaded successfully');
+});
+</script>
+{% endblock %}

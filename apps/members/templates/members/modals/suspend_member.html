@@ -1,0 +1,57 @@
+<div class="modal-content">
+    <div class="modal-header bg-warning">
+        <h5 class="modal-title text-dark">
+            <i class="fa fa-ban me-2"></i>Suspend Member
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <form hx-post="{% url 'members:member_suspend_submit' member.pk %}"
+          hx-target="#member-card-{{ member.pk }}"
+          hx-swap="outerHTML">
+        {% csrf_token %}
+        <div class="modal-body">
+            {% if error_message %}
+            <div class="alert alert-danger">
+                <i class="fa fa-exclamation-circle me-2"></i>
+                {{ error_message }}
+            </div>
+            {% endif %}
+            
+            <div class="alert alert-warning">
+                <i class="fa fa-exclamation-triangle me-2"></i>
+                <strong>Confirm Suspension</strong>
+            </div>
+            
+            <p>You are about to suspend the following member:</p>
+            
+            <div class="card bg-light mb-3">
+                <div class="card-body">
+                    <h6 class="mb-2"><strong>{{ member.get_full_name }}</strong></h6>
+                    <p class="mb-1"><strong>Member #:</strong> {{ member.member_number }}</p>
+                    <p class="mb-0"><strong>Current Status:</strong> 
+                        <span class="badge bg-success">{{ member.get_status_display }}</span>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="reason" class="form-label"><strong>Suspension Reason *</strong></label>
+                <textarea name="reason" 
+                          id="reason" 
+                          class="form-control" 
+                          rows="3" 
+                          placeholder="Enter the reason for suspension..."
+                          required></textarea>
+                <small class="form-text text-muted">This will be recorded in the member's history.</small>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <i class="fa fa-times me-1"></i>Cancel
+            </button>
+            <button type="submit" class="btn btn-warning">
+                <i class="fa fa-ban me-1"></i>Suspend Member
+            </button>
+        </div>
+    </form>
+</div>

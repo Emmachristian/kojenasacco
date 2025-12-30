@@ -1,0 +1,1013 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block extra_css %}
+<style>
+/* ============================================================================
+   GROUP HEADER SECTION
+   ============================================================================ */
+
+.group-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px 0;
+    margin: -30px -30px 30px -30px;
+    border-radius: 0;
+}
+
+.group-header-content {
+    padding: 0 30px;
+}
+
+.group-avatar-large {
+    width: 120px;
+    height: 120px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    border: 4px solid white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.group-avatar-icon {
+    font-size: 60px;
+    color: white;
+}
+
+.group-name {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+}
+
+.group-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-bottom: 15px;
+}
+
+.group-stats-row {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    padding: 20px;
+    backdrop-filter: blur(10px);
+    margin-top: 20px;
+}
+
+.stat-box {
+    text-align: center;
+    padding: 10px;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ============================================================================
+   BADGES
+   ============================================================================ */
+
+.status-badge {
+    display: inline-block;
+    padding: 0.4rem 0.9rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-active {
+    background-color: rgba(255, 255, 255, 0.3);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.status-inactive {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.capacity-badge {
+    display: inline-block;
+    padding: 0.4rem 0.9rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.capacity-full {
+    background-color: rgba(255, 193, 7, 0.3);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.capacity-available {
+    background-color: rgba(40, 167, 69, 0.3);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* ============================================================================
+   INFO CARDS
+   ============================================================================ */
+
+.info-card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.info-card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px 20px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.info-card-body {
+    padding: 20px;
+}
+
+.info-row {
+    display: flex;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #555;
+    width: 200px;
+    flex-shrink: 0;
+}
+
+.info-value {
+    color: #333;
+    flex: 1;
+}
+
+.info-icon {
+    color: #667eea;
+    margin-right: 8px;
+}
+
+/* ============================================================================
+   LEADERSHIP SECTION
+   ============================================================================ */
+
+.leadership-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.leader-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.leader-card:hover {
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.leader-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    color: white;
+    font-size: 36px;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.leader-role {
+    font-size: 0.85rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.leader-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.leader-meta {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+/* ============================================================================
+   MEMBERS TABLE
+   ============================================================================ */
+
+.members-table {
+    width: 100%;
+}
+
+.members-table thead {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.members-table th {
+    padding: 12px 15px;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #dee2e6;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.members-table td {
+    padding: 12px 15px;
+    vertical-align: middle;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.members-table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.members-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.member-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #dee2e6;
+}
+
+.member-avatar-placeholder {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.role-badge {
+    display: inline-block;
+    padding: 0.35rem 0.7rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.role-leader {
+    background-color: #ffc107;
+    color: #333;
+}
+
+.role-secretary {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.role-treasurer {
+    background-color: #28a745;
+    color: white;
+}
+
+.role-member {
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+.role-committee_member {
+    background-color: #6f42c1;
+    color: white;
+}
+
+.role-coordinator,
+.role-mentor {
+    background-color: #fd7e14;
+    color: white;
+}
+
+/* ============================================================================
+   CAPACITY INDICATOR
+   ============================================================================ */
+
+.capacity-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.capacity-bar {
+    height: 30px;
+    background: #e9ecef;
+    border-radius: 15px;
+    overflow: hidden;
+    position: relative;
+    margin: 15px 0;
+}
+
+.capacity-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 15px;
+    transition: width 0.5s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.capacity-text {
+    text-align: center;
+    margin-top: 10px;
+    font-weight: 600;
+    color: #495057;
+}
+
+/* ============================================================================
+   FINANCIAL SUMMARY
+   ============================================================================ */
+
+.financial-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.financial-item {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    border: 1px solid #dee2e6;
+}
+
+.financial-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.financial-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #667eea;
+}
+
+.financial-currency {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-top: 3px;
+}
+
+/* ============================================================================
+   MEETING INFO
+   ============================================================================ */
+
+.meeting-card {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.meeting-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.meeting-item:last-child {
+    margin-bottom: 0;
+}
+
+.meeting-item i {
+    color: #1976d2;
+    width: 30px;
+    font-size: 1.2rem;
+}
+
+.meeting-item-content {
+    flex: 1;
+}
+
+.meeting-item-label {
+    font-size: 0.85rem;
+    color: #1565c0;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.meeting-item-value {
+    font-size: 1rem;
+    color: #0d47a1;
+    font-weight: 600;
+}
+
+/* ============================================================================
+   EMPTY STATE
+   ============================================================================ */
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+}
+
+.empty-state-icon {
+    font-size: 4rem;
+    color: #dee2e6;
+    margin-bottom: 20px;
+}
+
+/* ============================================================================
+   QUICK ACTIONS
+   ============================================================================ */
+
+.quick-actions {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.quick-actions h6 {
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 768px) {
+    .group-header-content {
+        padding: 0 15px;
+    }
+    
+    .group-name {
+        font-size: 1.5rem;
+    }
+    
+    .group-subtitle {
+        font-size: 0.95rem;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+    }
+    
+    .info-row {
+        flex-direction: column;
+    }
+    
+    .info-label {
+        width: 100%;
+        margin-bottom: 5px;
+    }
+    
+    .members-table {
+        font-size: 0.85rem;
+    }
+    
+    .members-table th,
+    .members-table td {
+        padding: 8px 10px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Group Header -->
+<div class="group-header">
+    <div class="group-header-content">
+        <div class="row align-items-center">
+            <div class="col-md-2 text-center text-md-start mb-3 mb-md-0">
+                <div class="group-avatar-large mx-auto mx-md-0">
+                    <i class="fa fa-users group-avatar-icon"></i>
+                </div>
+            </div>
+            <div class="col-md-7 text-center text-md-start">
+                <h1 class="group-name">{{ group.name }}</h1>
+                <p class="group-subtitle">
+                    <i class="fa fa-tag me-2"></i>{{ group.get_group_type_display }}
+                    <span class="mx-2">•</span>
+                    <i class="fa fa-calendar me-2"></i>Formed {{ group.formation_date|date:"F d, Y" }}
+                </p>
+                <div>
+                    {% if group.is_active %}
+                        <span class="status-badge status-active">
+                            <i class="fa fa-check-circle me-1"></i> Active
+                        </span>
+                    {% else %}
+                        <span class="status-badge status-inactive">
+                            <i class="fa fa-times-circle me-1"></i> Inactive
+                        </span>
+                    {% endif %}
+                    
+                    {% if group.is_full %}
+                        <span class="capacity-badge capacity-full ms-2">
+                            <i class="fa fa-users me-1"></i> Full
+                        </span>
+                    {% else %}
+                        <span class="capacity-badge capacity-available ms-2">
+                            <i class="fa fa-door-open me-1"></i> Open for Joining
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-3 text-center text-md-end mt-3 mt-md-0">
+                <div class="btn-group">
+                    <a href="{% url 'members:group_edit' group.pk %}" class="btn btn-light">
+                        <i class="fa fa-edit me-1"></i> Edit
+                    </a>
+                    <button type="button" class="btn btn-light dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown">
+                        <span class="visually-hidden">Toggle Dropdown</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#"><i class="fa fa-user-plus me-2"></i>Add Members</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fa fa-file-alt me-2"></i>View Reports</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fa fa-print me-2"></i>Print Details</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="#"><i class="fa fa-trash me-2"></i>Delete Group</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Group Stats Row -->
+        <div class="group-stats-row">
+            <div class="row">
+                <div class="col-6 col-md-3">
+                    <div class="stat-box">
+                        <span class="stat-value">{{ group.member_count }}</span>
+                        <span class="stat-label">Members</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-box">
+                        <span class="stat-value">{{ group.available_slots }}</span>
+                        <span class="stat-label">Slots Available</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-box">
+                        <span class="stat-value">{{ group.group_age_days }}</span>
+                        <span class="stat-label">Days Active</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-box">
+                        <span class="stat-value">{{ group.get_meeting_frequency_display }}</span>
+                        <span class="stat-label">Meeting Freq.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="row">
+    <!-- Left Column -->
+    <div class="col-lg-8">
+        <!-- Group Information -->
+        <div class="info-card">
+            <div class="info-card-header">
+                <span><i class="fa fa-info-circle me-2"></i>Group Information</span>
+            </div>
+            <div class="info-card-body">
+                <div class="info-row">
+                    <div class="info-label">
+                        <i class="fa fa-tag info-icon"></i>Group Name
+                    </div>
+                    <div class="info-value">{{ group.name }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">
+                        <i class="fa fa-layer-group info-icon"></i>Group Type
+                    </div>
+                    <div class="info-value">{{ group.get_group_type_display }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">
+                        <i class="fa fa-align-left info-icon"></i>Description
+                    </div>
+                    <div class="info-value">{{ group.description|default:"No description provided" }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">
+                        <i class="fa fa-calendar-check info-icon"></i>Formation Date
+                    </div>
+                    <div class="info-value">{{ group.formation_date|date:"F d, Y" }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">
+                        <i class="fa fa-toggle-on info-icon"></i>Status
+                    </div>
+                    <div class="info-value">
+                        {% if group.is_active %}
+                            <span class="badge bg-success">Active</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leadership Section -->
+        <div class="info-card">
+            <div class="info-card-header">
+                <span><i class="fa fa-crown me-2"></i>Leadership</span>
+            </div>
+            <div class="info-card-body">
+                {% if group.group_leader or group.group_secretary or group.group_treasurer %}
+                    <div class="leadership-grid">
+                        {% if group.group_leader %}
+                        <div class="leader-card">
+                            <div class="leader-icon">
+                                <i class="fa fa-user-tie"></i>
+                            </div>
+                            <div class="leader-role">Group Leader</div>
+                            <div class="leader-name">{{ group.group_leader.get_full_name }}</div>
+                            <div class="leader-meta">
+                                <i class="fa fa-id-badge me-1"></i>{{ group.group_leader.member_number }}
+                            </div>
+                            <div class="mt-2">
+                                <a href="{% url 'members:member_profile' group.group_leader.pk %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fa fa-eye me-1"></i> View Profile
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if group.group_secretary %}
+                        <div class="leader-card">
+                            <div class="leader-icon">
+                                <i class="fa fa-file-signature"></i>
+                            </div>
+                            <div class="leader-role">Group Secretary</div>
+                            <div class="leader-name">{{ group.group_secretary.get_full_name }}</div>
+                            <div class="leader-meta">
+                                <i class="fa fa-id-badge me-1"></i>{{ group.group_secretary.member_number }}
+                            </div>
+                            <div class="mt-2">
+                                <a href="{% url 'members:member_profile' group.group_secretary.pk %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fa fa-eye me-1"></i> View Profile
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if group.group_treasurer %}
+                        <div class="leader-card">
+                            <div class="leader-icon">
+                                <i class="fa fa-money-bill-wave"></i>
+                            </div>
+                            <div class="leader-role">Group Treasurer</div>
+                            <div class="leader-name">{{ group.group_treasurer.get_full_name }}</div>
+                            <div class="leader-meta">
+                                <i class="fa fa-id-badge me-1"></i>{{ group.group_treasurer.member_number }}
+                            </div>
+                            <div class="mt-2">
+                                <a href="{% url 'members:member_profile' group.group_treasurer.pk %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fa fa-eye me-1"></i> View Profile
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="fa fa-user-tie"></i>
+                        </div>
+                        <p>No leadership positions assigned yet</p>
+                        <a href="{% url 'members:group_edit' group.pk %}" class="btn btn-primary btn-sm">
+                            <i class="fa fa-plus me-1"></i> Assign Leaders
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Members Section -->
+        <div class="info-card">
+            <div class="info-card-header">
+                <span><i class="fa fa-users me-2"></i>Group Members ({{ memberships.count }})</span>
+                <a href="#" class="btn btn-sm btn-light">
+                    <i class="fa fa-user-plus me-1"></i> Add Member
+                </a>
+            </div>
+            <div class="info-card-body">
+                <!-- Capacity Indicator -->
+                <div class="capacity-section">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span style="font-weight: 600; color: #495057;">Group Capacity</span>
+                        <span style="font-weight: 600; color: #667eea;">
+                            {% widthratio group.member_count group.maximum_members 100 as capacity_percent %}
+                            {{ capacity_percent }}%
+                        </span>
+                    </div>
+                    <div class="capacity-bar">
+                        <div class="capacity-fill" style="width: {{ capacity_percent }}%;">
+                            {% if capacity_percent > 20 %}{{ group.member_count }}/{{ group.maximum_members }}{% endif %}
+                        </div>
+                    </div>
+                    <div class="capacity-text">
+                        {{ group.member_count }} of {{ group.maximum_members }} members
+                        {% if group.available_slots > 0 %}
+                            ({{ group.available_slots }} slot{{ group.available_slots|pluralize }} available)
+                        {% else %}
+                            (Group is full)
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if memberships %}
+                    <div class="table-responsive mt-3">
+                        <table class="members-table">
+                            <thead>
+                                <tr>
+                                    <th>Member</th>
+                                    <th>Member #</th>
+                                    <th>Role</th>
+                                    <th>Joined</th>
+                                    <th>Contribution</th>
+                                    <th>Total</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for membership in memberships %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if membership.member.member_photo %}
+                                                <img src="{{ membership.member.member_photo.url }}" 
+                                                     alt="{{ membership.member.get_full_name }}" 
+                                                     class="member-avatar me-2">
+                                            {% else %}
+                                                <div class="member-avatar-placeholder me-2">
+                                                    {{ membership.member.first_name|first }}{{ membership.member.last_name|first }}
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <div style="font-weight: 600;">
+                                                    {{ membership.member.get_full_name }}
+                                                </div>
+                                                <div style="font-size: 0.85rem; color: #6c757d;">
+                                                    {{ membership.member.phone_primary }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ membership.member.member_number }}</td>
+                                    <td>
+                                        <span class="role-badge role-{{ membership.role|lower }}">
+                                            {{ membership.get_role_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ membership.join_date|date:"M d, Y" }}</td>
+                                    <td>UGX {{ membership.monthly_contribution|floatformat:0|intcomma }}</td>
+                                    <td>UGX {{ membership.total_contributions|floatformat:0|intcomma }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'members:member_profile' membership.member.pk %}" 
+                                               class="btn btn-outline-info" title="View Profile">
+                                                <i class="fa fa-eye"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-outline-danger" title="Remove">
+                                                <i class="fa fa-user-times"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="fa fa-users"></i>
+                        </div>
+                        <h5>No Members Yet</h5>
+                        <p>This group doesn't have any members yet. Add members to get started.</p>
+                        <button class="btn btn-primary btn-sm">
+                            <i class="fa fa-user-plus me-1"></i> Add First Member
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="col-lg-4">
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <h6><i class="fa fa-bolt me-2"></i>Quick Actions</h6>
+            <div class="d-grid gap-2">
+                <button class="btn btn-primary">
+                    <i class="fa fa-user-plus me-2"></i>Add Member
+                </button>
+                <button class="btn btn-success">
+                    <i class="fa fa-calendar-alt me-2"></i>Schedule Meeting
+                </button>
+                <button class="btn btn-info">
+                    <i class="fa fa-money-bill-wave me-2"></i>Record Contribution
+                </button>
+                <button class="btn btn-warning">
+                    <i class="fa fa-hand-holding-usd me-2"></i>Process Loan
+                </button>
+                <button class="btn btn-secondary">
+                    <i class="fa fa-chart-bar me-2"></i>View Reports
+                </button>
+            </div>
+        </div>
+
+        <!-- Financial Parameters -->
+        <div class="info-card">
+            <div class="info-card-header">
+                <span><i class="fa fa-coins me-2"></i>Financial Parameters</span>
+            </div>
+            <div class="info-card-body">
+                <div class="financial-grid">
+                    <div class="financial-item">
+                        <div class="financial-label">Min. Contribution</div>
+                        <div class="financial-value">
+                            {{ group.minimum_contribution|floatformat:0|intcomma }}
+                        </div>
+                        <div class="financial-currency">UGX / month</div>
+                    </div>
+
+                    <div class="financial-item">
+                        <div class="financial-label">Max. Loan</div>
+                        <div class="financial-value">
+                            {{ group.maximum_loan_amount|floatformat:0|intcomma }}
+                        </div>
+                        <div class="financial-currency">UGX</div>
+                    </div>
+
+                    <div class="financial-item">
+                        <div class="financial-label">Interest Rate</div>
+                        <div class="financial-value">{{ group.interest_rate }}%</div>
+                        <div class="financial-currency">per month</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Meeting Schedule -->
+        <div class="info-card">
+            <div class="info-card-header">
+                <span><i class="fa fa-calendar-alt me-2"></i>Meeting Schedule</span>
+            </div>
+            <div class="info-card-body">
+                <div class="meeting-card">
+                    <div class="meeting-item">
+                        <i class="fa fa-calendar-alt"></i>
+                        <div class="meeting-item-content">
+                            <div class="meeting-item-label">Frequency</div>
+                            <div class="meeting-item-value">{{ group.get_meeting_frequency_display }}</div>
+                        </div>
+                    </div>
+
+                    {% if group.meeting_day %}
+                    <div class="meeting-item">
+                        <i class="fa fa-calendar-day"></i>
+                        <div class="meeting-item-content">
+                            <div class="meeting-item-label">Day</div>
+                            <div class="meeting-item-value">{{ group.get_meeting_day_display }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if group.meeting_time %}
+                    <div class="meeting-item">
+                        <i class="fa fa-clock"></i>
+                        <div class="meeting-item-content">
+                            <div class="meeting-item-label">Time</div>
+                            <div class="meeting-item-value">{{ group.meeting_time|time:"g:i A" }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if group.meeting_location %}
+                    <div class="meeting-item">
+                        <i class="fa fa-map-marker-alt"></i>
+                        <div class="meeting-item-content">
+                            <div class="meeting-item-label">Location</div>
+                            <div class="meeting-item-value">{{ group.meeting_location }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Rules and Regulations -->
+        {% if group.terms_and_conditions or group.group_rules %}
+        <div class="info-card">
+            <div class="info-card-header">
+                <span><i class="fa fa-gavel me-2"></i>Rules & Regulations</span>
+            </div>
+            <div class="info-card-body">
+                {% if group.terms_and_conditions %}
+                <div class="mb-3">
+                    <h6 style="font-weight: 600; color: #495057; margin-bottom: 10px;">
+                        <i class="fa fa-file-contract me-1"></i> Terms and Conditions
+                    </h6>
+                    <p style="font-size: 0.9rem; color: #6c757d; white-space: pre-line;">
+                        {{ group.terms_and_conditions }}
+                    </p>
+                </div>
+                {% endif %}
+
+                {% if group.group_rules %}
+                <div>
+                    <h6 style="font-weight: 600; color: #495057; margin-bottom: 10px;">
+                        <i class="fa fa-list-ul me-1"></i> Group Rules
+                    </h6>
+                    <p style="font-size: 0.9rem; color: #6c757d; white-space: pre-line;">
+                        {{ group.group_rules }}
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Group Detail JavaScript loaded successfully');
+    
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

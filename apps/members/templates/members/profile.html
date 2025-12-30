@@ -1,0 +1,1629 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+{% load custom_filters %}
+
+{% block extra_css %}
+<style>
+    /* Profile Header Card */
+    .profile-header-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        color: #495057;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .profile-avatar-large {
+        width: 150px;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 5px solid white;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .avatar-placeholder-large {
+        width: 150px;
+        height: 150px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        border: 5px solid white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .avatar-title-large {
+        font-size: 60px;
+        color: white;
+        font-weight: 600;
+    }
+
+    .profile-name {
+        font-size: 2rem;
+        font-weight: 600;
+        margin: 15px 0 5px 0;
+    }
+
+    .profile-subtitle {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        margin-bottom: 20px;
+    }
+
+    .profile-stats {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 20px;
+        backdrop-filter: blur(10px);
+    }
+
+    .stat-item {
+        text-align: center;
+        padding: 10px;
+    }
+
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .info-card {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+
+    .info-card-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        color: #495057;
+        padding: 15px 20px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .info-card-body {
+        padding: 20px;
+    }
+
+    .info-row {
+        display: flex;
+        padding: 12px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .info-row:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: #555;
+        width: 180px;
+        flex-shrink: 0;
+    }
+
+    .info-value {
+        color: #333;
+        flex: 1;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 0.4rem 0.9rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .status-ACTIVE {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .status-PENDING_APPROVAL {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+
+    .status-SUSPENDED {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    .status-DORMANT {
+        background-color: #e2e3e5;
+        color: #383d41;
+        border: 1px solid #d6d8db;
+    }
+
+    .status-WITHDRAWN,
+    .status-TERMINATED,
+    .status-BLACKLISTED {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    .kyc-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.4rem 0.9rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .kyc-VERIFIED {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .kyc-PENDING,
+    .kyc-IN_PROGRESS {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .kyc-REJECTED,
+    .kyc-EXPIRED {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    .risk-badge {
+        display: inline-block;
+        padding: 0.4rem 0.9rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .risk-VERY_LOW,
+    .risk-LOW {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .risk-MEDIUM {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .risk-HIGH,
+    .risk-VERY_HIGH {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    .credit-score-display {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+    }
+
+    .credit-score-value {
+        font-size: 3rem;
+        font-weight: 700;
+        display: block;
+        margin: 10px 0;
+    }
+
+    .credit-score-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .payment-method-card,
+    .nok-card,
+    .contact-card,
+    .group-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-left: 4px solid #667eea;
+        transition: all 0.3s ease;
+    }
+
+    .payment-method-card:hover,
+    .nok-card:hover,
+    .contact-card:hover,
+    .group-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .payment-method-card.primary,
+    .nok-card.primary {
+        border-left-color: #28a745;
+        background: #f0fff4;
+    }
+
+    .card-title {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 10px;
+        font-size: 1.1rem;
+    }
+
+    .card-subtitle {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+    }
+
+    .card-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-top: 10px;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.85rem;
+        color: #555;
+    }
+
+    .badge-primary-item {
+        background-color: #28a745;
+        color: white;
+        padding: 0.25rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .badge-verified {
+        background-color: #17a2b8;
+        color: white;
+        padding: 0.25rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .badge-emergency {
+        background-color: #dc3545;
+        color: white;
+        padding: 0.25rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .badge-beneficiary {
+        background-color: #ffc107;
+        color: #333;
+        padding: 0.25rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #999;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        opacity: 0.3;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .quick-actions {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+
+    .quick-actions h6 {
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: #333;
+    }
+
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 8px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #e0e0e0;
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-bottom: 20px;
+    }
+
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -26px;
+        top: 5px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #667eea;
+        border: 2px solid white;
+        box-shadow: 0 0 0 2px #667eea;
+    }
+
+    .timeline-date {
+        font-size: 0.85rem;
+        color: #999;
+        margin-bottom: 5px;
+    }
+
+    .timeline-content {
+        background: #f8f9fa;
+        padding: 10px 15px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+        .profile-name {
+            font-size: 1.5rem;
+        }
+
+        .profile-subtitle {
+            font-size: 0.95rem;
+        }
+
+        .stat-value {
+            font-size: 1.4rem;
+        }
+
+        .info-row {
+            flex-direction: column;
+        }
+
+        .info-label {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+
+        .credit-score-value {
+            font-size: 2rem;
+        }
+    }
+
+    .progress-thin {
+        height: 8px;
+        border-radius: 10px;
+        background-color: #e9ecef;
+    }
+
+    .progress-thin .progress-bar {
+        border-radius: 10px;
+    }
+
+    .info-icon {
+        color: #667eea;
+        margin-right: 8px;
+    }
+
+    .section-divider {
+        border: 0;
+        height: 2px;
+        background: linear-gradient(to right, transparent, #e0e0e0, transparent);
+        margin: 30px 0;
+    }
+
+    /* Tab Styling */
+    .main-card {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border: none;
+    }
+
+    .main-card .card-body {
+        padding: 20px;
+    }
+
+    .btn-group .btn {
+        border-radius: 0;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    .btn-group .btn:first-child {
+        border-top-left-radius: 5px;
+        border-bottom-left-radius: 5px;
+    }
+
+    .btn-group .btn:last-child {
+        border-top-right-radius: 5px;
+        border-bottom-right-radius: 5px;
+    }
+
+    .btn-group .btn.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        border-color: transparent !important;
+        color: white !important;
+        font-weight: 600;
+    }
+
+    .btn-group .btn:not(.active) {
+        background: #f8f9fa;
+        color: #667eea;
+    }
+
+    .btn-group .btn:not(.active):hover {
+        background: #e9ecef;
+        color: #556bd8;
+    }
+
+    .btn-group-sm .btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .tab-content {
+        padding-top: 20px;
+    }
+
+    .tab-pane {
+        animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Responsive tabs for mobile */
+    @media (max-width: 768px) {
+        .btn-group {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .btn-group .btn {
+            border-radius: 5px !important;
+            margin-bottom: 5px;
+        }
+
+        .btn-group .btn:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+/* Additional Styles for Next of Kin Tab */
+.nok-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    border-left: 4px solid #dee2e6;
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.nok-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.nok-card.primary {
+    border-left-color: #667eea;
+    background: linear-gradient(to right, rgba(102, 126, 234, 0.05) 0%, white 15%);
+}
+
+.nok-card .card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 3px;
+}
+
+.nok-card .card-subtitle {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.nok-details {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.detail-row {
+    display: flex;
+    align-items: start;
+    gap: 12px;
+}
+
+.detail-row i {
+    width: 20px;
+    margin-top: 3px;
+}
+
+.detail-row small {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-row .fw-medium {
+    font-size: 0.9rem;
+}
+
+.card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px solid #e9ecef;
+}
+
+.badge-primary-item {
+    background-color: #667eea;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 15px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.badge-emergency {
+    background-color: #dc3545;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+}
+
+.badge-beneficiary {
+    background-color: #28a745;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-link {
+    color: #6c757d;
+    text-decoration: none;
+}
+
+.btn-link:hover {
+    color: #212529;
+}
+
+.nok-summary {
+    border: 1px solid #dee2e6;
+}
+
+.nok-summary .fw-bold {
+    font-size: 1.5rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border: 2px dashed #dee2e6;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    color: #dee2e6;
+    margin-bottom: 15px;
+}
+
+.empty-state p {
+    color: #6c757d;
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+    .nok-card {
+        margin-bottom: 15px;
+    }
+    
+    .nok-summary .col-md-3 {
+        margin-bottom: 15px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- App Page Title -->
+<div class="app-page-title">
+    <div class="page-title-wrapper">
+        <div class="page-title-heading">
+            <div class="page-title-icon">
+                <i class="pe-7s-user icon-gradient bg-mean-fruit"></i>
+            </div>
+            <div>
+                {{ member.get_full_name }}
+                <div class="page-title-subheading">
+                    Member #{{ member.member_number }} • {{ member.get_member_category_display }} • {{ member.get_membership_plan_display }}
+                </div>
+            </div>
+        </div>
+        <div class="page-title-actions">
+            <a href="{% url 'members:member_edit' member.pk %}" class="btn btn-primary">
+                <i class="fa fa-edit me-1"></i> Edit
+            </a>
+            <div class="dropdown d-inline-block ms-2">
+                <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fa fa-ellipsis-v"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="#"><i class="fa fa-print me-2"></i>Print Profile</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="fa fa-file-pdf me-2"></i>Export PDF</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="fa fa-download me-2"></i>Export Data</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="#"><i class="fa fa-ban me-2"></i>Suspend Member</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Profile Header Card -->
+<div class="profile-header-card mb-3">
+    <div class="row align-items-center">
+            <div class="col-md-3 text-center text-md-start mb-3 mb-md-0">
+                {% if member.member_photo %}
+                    <img src="{{ member.member_photo.url }}" alt="{{ member.get_full_name }}" class="profile-avatar-large">
+                {% else %}
+                    <div class="avatar-placeholder-large mx-auto mx-md-0">
+                        <div class="avatar-title-large">
+                            {{ member.first_name|first }}{{ member.last_name|first }}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col-md-6 text-center text-md-start">
+                <h1 class="profile-name">{{ member.get_full_name }}</h1>
+                <p class="profile-subtitle mb-2">
+                    <i class="fa fa-id-card me-2"></i>{{ member.member_number }}
+                    {% if member.occupation %}
+                    <span class="mx-2">•</span>
+                    <i class="fa fa-briefcase me-2"></i>{{ member.occupation }}
+                    {% endif %}
+                </p>
+                <div class="mb-3">
+                    <span class="status-badge status-{{ member.status }}">
+                        {{ member.get_status_display }}
+                    </span>
+                    <span class="kyc-badge kyc-{{ member.kyc_status }} ms-2">
+                        {% if member.kyc_status == 'VERIFIED' %}
+                            <i class="fa fa-check-circle"></i>
+                        {% else %}
+                            <i class="fa fa-clock"></i>
+                        {% endif %}
+                        {{ member.get_kyc_status_display }}
+                    </span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="action-buttons justify-content-center justify-content-md-end">
+                    <a href="{% url 'members:member_edit' member.pk %}" class="btn btn-light">
+                        <i class="fa fa-edit me-1"></i> Edit
+                    </a>
+                    <div class="dropdown d-inline-block">
+                        <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fa fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#"><i class="fa fa-print me-2"></i>Print Profile</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fa fa-file-pdf me-2"></i>Export PDF</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fa fa-download me-2"></i>Export Data</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="#"><i class="fa fa-ban me-2"></i>Suspend Member</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Stats -->
+        <div class="profile-stats mt-4">
+            <div class="row">
+                <div class="col-6 col-md-3">
+                    <div class="stat-item">
+                        <span class="stat-value">{{ member.membership_duration_years|floatformat:1 }}</span>
+                        <span class="stat-label">Years</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-item">
+                        <span class="stat-value">{{ member.age }}</span>
+                        <span class="stat-label">Age</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-item">
+                        <span class="stat-value">{{ member.get_member_category_display }}</span>
+                        <span class="stat-label">Category</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-item">
+                        <span class="stat-value">{{ member.get_membership_plan_display }}</span>
+                        <span class="stat-label">Plan</span>
+                    </div>
+                </div>
+            </div>
+    </div>
+</div>
+
+<!-- Main Content Row -->
+<div class="row">
+        <!-- Left Column -->
+        <div class="col-lg-8">
+            <!-- Tabbed Content Card -->
+            <div class="main-card mb-3 card">
+                <div class="card-body">
+                    <!-- Tab Navigation -->
+                    <div class="mb-3">
+                        <div role="group" class="btn-group-sm nav btn-group w-100">
+                            <a data-bs-toggle="tab" href="#tab-personal" class="btn-shadow active btn btn-primary">
+                                <i class="fa fa-user me-1"></i>Personal
+                            </a>
+                            <a data-bs-toggle="tab" href="#tab-contact" class="btn-shadow btn btn-primary">
+                                <i class="fa fa-envelope me-1"></i>Contact
+                            </a>
+                            <a data-bs-toggle="tab" href="#tab-financial" class="btn-shadow btn btn-primary">
+                                <i class="fa fa-briefcase me-1"></i>Financial
+                            </a>
+                            <a data-bs-toggle="tab" href="#tab-payment" class="btn-shadow btn btn-primary">
+                                <i class="fa fa-credit-card me-1"></i>Payment
+                            </a>
+                            <a data-bs-toggle="tab" href="#tab-nok" class="btn-shadow btn btn-primary">
+                                <i class="fa fa-users me-1"></i>Next of Kin
+                            </a>
+                            {% if group_memberships %}
+                            <a data-bs-toggle="tab" href="#tab-groups" class="btn-shadow btn btn-primary">
+                                <i class="fa fa-users-cog me-1"></i>Groups
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Tab Content -->
+                    <div class="tab-content">
+                        <!-- Personal Information Tab -->
+                        <div class="tab-pane active" id="tab-personal" role="tabpanel">
+                            <h5 class="card-title mb-3">
+                                <i class="fa fa-user me-2"></i>Personal Information
+                            </h5>
+                            <div class="info-row">
+                                <div class="info-label">
+                                    <i class="fa fa-id-card info-icon"></i>Full Name
+                                </div>
+                                <div class="info-value">{{ member.get_full_name }}</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">
+                                    <i class="fa fa-hashtag info-icon"></i>Member Number
+                                </div>
+                                <div class="info-value">{{ member.member_number }}</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">
+                                    <i class="fa fa-id-badge info-icon"></i>ID Number
+                                </div>
+                                <div class="info-value">{{ member.id_number }} ({{ member.get_id_type_display }})</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">
+                                    <i class="fa fa-birthday-cake info-icon"></i>Date of Birth
+                                </div>
+                                <div class="info-value">{{ member.date_of_birth|date:"F d, Y" }} ({{ member.age }} years old)</div>
+                            </div>
+                            {% if member.place_of_birth %}
+                            <div class="info-row">
+                                <div class="info-label">
+                                    <i class="fa fa-map-marker-alt info-icon"></i>Place of Birth
+                                </div>
+                                <div class="info-value">{{ member.place_of_birth }}</div>
+                            </div>
+                            {% endif %}
+                            <div class="info-row">
+                                <div class="info-label">
+                                    <i class="fa fa-venus-mars info-icon"></i>Gender
+                                </div>
+                                <div class="info-value">{{ member.get_gender_display }}</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">
+                                    <i class="fa fa-heart info-icon"></i>Marital Status
+                                </div>
+                                <div class="info-value">{{ member.get_marital_status_display }}</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">
+                                    <i class="fa fa-flag info-icon"></i>Nationality
+                                </div>
+                                <div class="info-value">{{ member.nationality.name }}</div>
+                            </div>
+                            {% if member.religious_affiliation %}
+                            <div class="info-row">
+                                <div class="info-label">
+                                    <i class="fa fa-praying-hands info-icon"></i>Religion
+                                </div>
+                                <div class="info-value">{{ member.get_religious_affiliation_display }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Contact Information Tab -->
+                        <div class="tab-pane" id="tab-contact" role="tabpanel">
+                            <h5 class="card-title mb-3">
+                                <i class="fa fa-envelope me-2"></i>Contact Information
+                            </h5>
+                            {% if member.personal_email %}
+                            <div class="info-row">
+                                <div class="info-label">
+                                    <i class="fa fa-at info-icon"></i>Email
+                                </div>
+                                <div class="info-value">
+                                    <a href="mailto:{{ member.personal_email }}">{{ member.personal_email }}</a>
+                                </div>
+                            </div>
+                            {% endif %}
+                            <div class="info-row">
+                                <div class="info-label">
+                                    <i class="fa fa-phone info-icon"></i>Phone
+                                </div>
+                                <div class="info-value">
+                                    <a href="tel:{{ member.phone_primary }}">{{ member.phone_primary }}</a>
+                                </div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">
+                                    <i class="fa fa-map-marked-alt info-icon"></i>Physical Address
+                                </div>
+                                <div class="info-value">{{ member.physical_address }}</div>
+                            </div>
+                            {% if member.postal_address %}
+                            <div class="info-row">
+                                <div class="info-label">
+                                    <i class="fa fa-mailbox info-icon"></i>Postal Address
+                                </div>
+                                <div class="info-value">
+                                    {{ member.postal_address }}
+                                    {% if member.postal_code %}, {{ member.postal_code }}{% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            <div class="info-row">
+                                <div class="info-label">
+                                    <i class="fa fa-globe info-icon"></i>Location
+                                </div>
+                                <div class="info-value">
+                                    {% if member.city %}{{ member.city }}, {% endif %}
+                                    {% if member.state_province %}{{ member.state_province }}, {% endif %}
+                                    {{ member.country.name }}
+                                </div>
+                            </div>
+
+                            {% if additional_contacts %}
+                            <hr class="section-divider">
+                            <h6 class="mt-4 mb-3">
+                                <i class="fa fa-address-book me-2"></i>Additional Contact Methods
+                                <a href="#" class="btn btn-sm btn-outline-primary float-end">
+                                    <i class="fa fa-plus me-1"></i> Add Contact
+                                </a>
+                            </h6>
+                            {% for contact in additional_contacts %}
+                            <div class="contact-card">
+                                <div class="card-title">{{ contact.get_contact_type_display }}</div>
+                                <div class="card-subtitle">{{ contact.contact_value }}</div>
+                                <div class="card-meta">
+                                    {% if contact.is_verified %}
+                                    <span class="badge-verified">
+                                        <i class="fa fa-check-circle me-1"></i>Verified
+                                    </span>
+                                    {% endif %}
+                                    {% if contact.is_active %}
+                                    <span class="meta-item">
+                                        <i class="fa fa-circle text-success" style="font-size: 0.5rem;"></i>
+                                        Active
+                                    </span>
+                                    {% endif %}
+                                    {% if contact.notes %}
+                                    <span class="meta-item">
+                                        <i class="fa fa-sticky-note"></i>
+                                        {{ contact.notes }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <!-- Financial Information Tab -->
+                        <div class="tab-pane" id="tab-financial" role="tabpanel">
+                            <h5 class="card-title mb-3">
+                                <i class="fa fa-briefcase me-2"></i>Employment & Financial Information
+                            </h5>
+                            <div class="info-row">
+                                <div class="info-label">
+                                    <i class="fa fa-user-tie info-icon"></i>Employment Status
+                                </div>
+                                <div class="info-value">{{ member.get_employment_status_display }}</div>
+                            </div>
+                            {% if member.occupation %}
+                            <div class="info-row">
+                                <div class="info-label">
+                                    <i class="fa fa-id-badge info-icon"></i>Occupation
+                                </div>
+                                <div class="info-value">{{ member.occupation }}</div>
+                            </div>
+                            {% endif %}
+                            {% if member.employer %}
+                            <div class="info-row">
+                                <div class="info-label">
+                                    <i class="fa fa-building info-icon"></i>Employer
+                                </div>
+                                <div class="info-value">{{ member.employer }}</div>
+                            </div>
+                            {% endif %}
+                            {% if member.employer_address %}
+                            <div class="info-row">
+                                <div class="info-label">
+                                    <i class="fa fa-map-marker-alt info-icon"></i>Employer Address
+                                </div>
+                                <div class="info-value">{{ member.employer_address }}</div>
+                            </div>
+                            {% endif %}
+                            {% if member.monthly_income %}
+                            <div class="info-row">
+                                <div class="info-label">
+                                    <i class="fa fa-money-bill-wave info-icon"></i>Monthly Income
+                                </div>
+                                <div class="info-value">UGX {{ member.monthly_income|intcomma }}</div>
+                            </div>
+                            {% endif %}
+                            {% if member.income_source %}
+                            <div class="info-row">
+                                <div class="info-label">
+                                    <i class="fa fa-source info-icon"></i>Income Source
+                                </div>
+                                <div class="info-value">{{ member.income_source }}</div>
+                            </div>
+                            {% endif %}
+                            {% if member.other_income_sources %}
+                            <div class="info-row">
+                                <div class="info-label">
+                                    <i class="fa fa-plus-circle info-icon"></i>Other Income
+                                </div>
+                                <div class="info-value">{{ member.other_income_sources }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Payment Methods Tab -->
+                        <div class="tab-pane" id="tab-payment" role="tabpanel">
+                            <h5 class="card-title mb-3">
+                                <i class="fa fa-credit-card me-2"></i>Payment Methods
+                                <a href="#" class="btn btn-sm btn-outline-primary float-end">
+                                    <i class="fa fa-plus me-1"></i> Add Payment Method
+                                </a>
+                            </h5>
+                            {% if payment_methods %}
+                                {% for payment in payment_methods %}
+                                <div class="payment-method-card{% if payment.is_primary %} primary{% endif %}">
+                                    <div class="card-title">
+                                        {{ payment.get_method_type_display }}
+                                        {% if payment.is_primary %}
+                                        <span class="badge-primary-item float-end">Primary</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="card-subtitle">{{ payment.provider }}</div>
+                                    <div class="mt-2">
+                                        <strong>Account:</strong> {{ payment.account_name }}<br>
+                                        <strong>Number:</strong> {{ payment.masked_account_number }}
+                                        {% if payment.account_type %}
+                                        <br><strong>Type:</strong> {{ payment.get_account_type_display }}
+                                        {% endif %}
+                                        {% if payment.branch %}
+                                        <br><strong>Branch:</strong> {{ payment.branch }}
+                                        {% endif %}
+                                    </div>
+                                    <div class="card-meta">
+                                        {% if payment.is_verified %}
+                                        <span class="badge-verified">
+                                            <i class="fa fa-check-circle me-1"></i>Verified
+                                        </span>
+                                        {% endif %}
+                                        {% if payment.is_active %}
+                                        <span class="meta-item">
+                                            <i class="fa fa-circle text-success" style="font-size: 0.5rem;"></i>
+                                            Active
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="empty-state">
+                                    <i class="fa fa-credit-card"></i>
+                                    <p>No payment methods added yet</p>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Next of Kin Tab -->
+                        <div class="tab-pane" id="tab-nok" role="tabpanel">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="card-title mb-0">
+                                    <i class="fa fa-users me-2"></i>Next of Kin
+                                </h5>
+                                <div class="btn-group">
+                                    <a href="{% url 'members:next_of_kin_list' %}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fa fa-list me-1"></i> View All
+                                    </a>
+                                    <a href="{% url 'members:next_of_kin_create' member.pk %}" class="btn btn-sm btn-primary">
+                                        <i class="fa fa-plus me-1"></i> Add Next of Kin
+                                    </a>
+                                </div>
+                            </div>
+
+                            {% if next_of_kin %}
+                                <div class="row">
+                                    {% for nok in next_of_kin %}
+                                    <div class="col-md-6 mb-3">
+                                        <div class="nok-card{% if nok.is_primary %} primary{% endif %}">
+                                            <!-- Card Header -->
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div class="flex-grow-1">
+                                                    <div class="card-title">
+                                                        {{ nok.name }}
+                                                        {% if nok.is_primary %}
+                                                        <span class="badge-primary-item ms-2">Primary</span>
+                                                        {% endif %}
+                                                    </div>
+                                                    <div class="card-subtitle">{{ nok.get_relation_display }}</div>
+                                                </div>
+                                                
+                                                <!-- Actions Dropdown -->
+                                                <div class="dropdown">
+                                                    <button class="btn btn-sm btn-link text-muted p-0" 
+                                                            type="button" 
+                                                            id="nokDropdown{{ nok.pk }}" 
+                                                            data-bs-toggle="dropdown" 
+                                                            aria-expanded="false">
+                                                        <i class="fa fa-ellipsis-v"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nokDropdown{{ nok.pk }}">
+                                                        <li>
+                                                            <a class="dropdown-item" href="{% url 'members:next_of_kin_edit' nok.pk %}">
+                                                                <i class="fa fa-edit me-2 text-primary"></i> Edit
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <button type="button" class="dropdown-item text-danger" 
+                                                                    data-bs-toggle="modal" 
+                                                                    data-bs-target="#deleteNokModal{{ nok.pk }}">
+                                                                <i class="fa fa-trash me-2"></i> Delete
+                                                            </button>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+
+                                            <!-- Contact Details -->
+                                            <div class="nok-details mt-3">
+                                                <div class="detail-row">
+                                                    <i class="fa fa-phone text-primary"></i>
+                                                    <div>
+                                                        <small class="text-muted">Contact</small>
+                                                        <div class="fw-medium">{{ nok.contact }}</div>
+                                                    </div>
+                                                </div>
+
+                                                {% if nok.email %}
+                                                <div class="detail-row">
+                                                    <i class="fa fa-envelope text-primary"></i>
+                                                    <div>
+                                                        <small class="text-muted">Email</small>
+                                                        <div class="fw-medium">{{ nok.email }}</div>
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+
+                                                {% if nok.address %}
+                                                <div class="detail-row">
+                                                    <i class="fa fa-map-marker-alt text-primary"></i>
+                                                    <div>
+                                                        <small class="text-muted">Address</small>
+                                                        <div class="fw-medium">{{ nok.address|truncatewords:10 }}</div>
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+
+                                                {% if nok.id_number %}
+                                                <div class="detail-row">
+                                                    <i class="fa fa-id-card text-primary"></i>
+                                                    <div>
+                                                        <small class="text-muted">ID Number</small>
+                                                        <div class="fw-medium">{{ nok.id_number }}</div>
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+
+                                                {% if nok.age %}
+                                                <div class="detail-row">
+                                                    <i class="fa fa-birthday-cake text-primary"></i>
+                                                    <div>
+                                                        <small class="text-muted">Age</small>
+                                                        <div class="fw-medium">{{ nok.age }} years</div>
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+
+                                            <!-- Badges -->
+                                            <div class="card-meta mt-3">
+                                                {% if nok.is_emergency_contact %}
+                                                <span class="badge-emergency">
+                                                    <i class="fa fa-exclamation-triangle me-1"></i>Emergency Contact
+                                                </span>
+                                                {% endif %}
+                                                {% if nok.is_beneficiary %}
+                                                <span class="badge-beneficiary">
+                                                    <i class="fa fa-gift me-1"></i>Beneficiary ({{ nok.beneficiary_percentage }}%)
+                                                </span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Delete Confirmation Modal for this NOK -->
+                                    <div class="modal fade" id="deleteNokModal{{ nok.pk }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-danger text-white">
+                                                    <h5 class="modal-title">
+                                                        <i class="fa fa-exclamation-triangle me-2"></i> Confirm Delete
+                                                    </h5>
+                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>Are you sure you want to delete <strong>{{ nok.name }}</strong> as next of kin?</p>
+                                                    <p class="text-danger mb-0">
+                                                        <i class="fa fa-info-circle me-1"></i>
+                                                        This action cannot be undone.
+                                                    </p>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                        <i class="fa fa-times me-1"></i> Cancel
+                                                    </button>
+                                                    <form method="post" action="{% url 'members:next_of_kin_delete' nok.pk %}" style="display: inline;">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-danger">
+                                                            <i class="fa fa-trash me-1"></i> Delete
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+
+                                <!-- Summary Statistics -->
+                                <div class="nok-summary mt-4 p-3 bg-light rounded">
+                                    <div class="row text-center">
+                                        <div class="col-md-3">
+                                            <div class="fw-bold text-primary">{{ next_of_kin|length }}</div>
+                                            <small class="text-muted">Total Next of Kin</small>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="fw-bold text-success">
+                                                {{ next_of_kin|selectattr:"is_beneficiary,True"|length }}
+
+                                            </div>
+                                            <small class="text-muted">Beneficiaries</small>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="fw-bold text-danger">
+                                                {{ next_of_kin|selectattr:"is_emergency_contact,True"|length }}
+                                            </div>
+                                            <small class="text-muted">Emergency Contacts</small>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="fw-bold text-warning">
+                                                {{ next_of_kin|selectattr:"is_primary,True"|length }}
+                                            </div>
+                                            <small class="text-muted">Primary Contacts</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="empty-state">
+                                    <i class="fa fa-users"></i>
+                                    <p>No next of kin added yet</p>
+                                    <a href="{% url 'members:next_of_kin_create' member.pk %}" class="btn btn-primary">
+                                        <i class="fa fa-plus me-1"></i> Add First Next of Kin
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Group Memberships Tab -->
+                        {% if group_memberships %}
+                        <div class="tab-pane" id="tab-groups" role="tabpanel">
+                            <h5 class="card-title mb-3">
+                                <i class="fa fa-users-cog me-2"></i>Group Memberships
+                            </h5>
+                            {% for membership in group_memberships %}
+                            <div class="group-card">
+                                <div class="card-title">{{ membership.group.name }}</div>
+                                <div class="card-subtitle">{{ membership.group.get_group_type_display }}</div>
+                                <div class="mt-2">
+                                    <strong>Role:</strong> {{ membership.get_role_display }}<br>
+                                    <strong>Joined:</strong> {{ membership.join_date|date:"M d, Y" }}<br>
+                                    <strong>Monthly Contribution:</strong> UGX {{ membership.monthly_contribution|intcomma }}<br>
+                                    <strong>Total Contributions:</strong> UGX {{ membership.total_contributions|intcomma }}
+                                </div>
+                                <div class="card-meta">
+                                    <span class="meta-item">
+                                        <i class="fa fa-calendar-check"></i>
+                                        {{ membership.membership_duration_days }} days
+                                    </span>
+                                    {% if membership.meeting_attendance_rate %}
+                                    <span class="meta-item">
+                                        <i class="fa fa-percentage"></i>
+                                        {{ membership.meeting_attendance_rate }}% attendance
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- Membership Benefits -->
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <span><i class="fa fa-gift me-2"></i>Membership Benefits</span>
+                    </div>
+                    <div class="info-card-body">
+                        <div class="info-row">
+                            <div class="info-label">
+                                <i class="fa fa-calculator info-icon"></i>Loan Multiplier
+                            </div>
+                            <div class="info-value">{{ member.maximum_loan_multiplier }}x</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">
+                                <i class="fa fa-percent info-icon"></i>Interest Discount
+                            </div>
+                            <div class="info-value">{{ member.loan_interest_discount }}%</div>
+                        </div>
+                        {% if member.special_privileges %}
+                        <div class="mt-3">
+                            <strong>Special Privileges:</strong>
+                            <ul class="mt-2 mb-0 small">
+                                {% for privilege in member.special_privileges %}
+                                <li>{{ privilege }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Tax & Compliance -->
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <span><i class="fa fa-shield-alt me-2"></i>Tax & Compliance</span>
+                    </div>
+                    <div class="info-card-body">
+                        {% if member.tax_id %}
+                        <div class="info-row">
+                            <div class="info-label">
+                                <i class="fa fa-receipt info-icon"></i>Tax ID
+                            </div>
+                            <div class="info-value">{{ member.tax_id }}</div>
+                        </div>
+                        {% endif %}
+
+                        <div class="info-row">
+                            <div class="info-label">
+                                <i class="fa fa-check-circle info-icon"></i>Tax Status
+                            </div>
+                            <div class="info-value">
+                                {% if member.tax_exemption_status %}
+                                    <span class="badge bg-warning text-dark">Exempt</span>
+                                    {% if member.tax_exemption_reason %}
+                                    <br><small class="text-muted">{{ member.tax_exemption_reason }}</small>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge bg-success">Taxable</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="info-row">
+                            <div class="info-label">
+                                <i class="fa fa-user-shield info-icon"></i>KYC Status
+                            </div>
+                            <div class="info-value">
+                                <span class="kyc-badge kyc-{{ member.kyc_status }}">
+                                    {{ member.get_kyc_status_display }}
+                                </span>
+                            </div>
+                        </div>
+
+                        {% if member.kyc_verified_date %}
+                        <div class="info-row">
+                            <div class="info-label">
+                                <i class="fa fa-calendar-check info-icon"></i>KYC Verified
+                            </div>
+                            <div class="info-value">{{ member.kyc_verified_date|date:"M d, Y" }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if member.kyc_expiry_date %}
+                        <div class="info-row">
+                            <div class="info-label">
+                                <i class="fa fa-calendar-times info-icon"></i>KYC Expires
+                            </div>
+                            <div class="info-value">
+                                {{ member.kyc_expiry_date|date:"M d, Y" }}
+                                {% if member.kyc_needs_update %}
+                                <span class="badge bg-danger ms-2">Expired</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if member.kyc_notes %}
+                        <div class="mt-3">
+                            <strong>KYC Notes:</strong>
+                            <p class="mb-0 mt-2 text-muted small">{{ member.kyc_notes }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-lg-4">
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <h6><i class="fa fa-bolt me-2"></i>Quick Actions</h6>
+                <div class="d-grid gap-2">
+                    <a href="#" class="btn btn-primary">
+                        <i class="fa fa-hand-holding-usd me-2"></i>Process Loan
+                    </a>
+                    <a href="#" class="btn btn-success">
+                        <i class="fa fa-piggy-bank me-2"></i>Record Savings
+                    </a>
+                    <a href="#" class="btn btn-info">
+                        <i class="fa fa-money-check-alt me-2"></i>Record Payment
+                    </a>
+                    <a href="#" class="btn btn-warning">
+                        <i class="fa fa-file-invoice-dollar me-2"></i>View Transactions
+                    </a>
+                    <a href="#" class="btn btn-secondary">
+                        <i class="fa fa-chart-bar me-2"></i>View Reports
+                    </a>
+                </div>
+            </div>
+
+            <!-- Credit Score -->
+            <div class="info-card">
+                <div class="info-card-header">
+                    <span><i class="fa fa-chart-line me-2"></i>Credit Assessment</span>
+                </div>
+                <div class="info-card-body">
+                    <div class="credit-score-display mb-3">
+                        <div class="credit-score-label">Credit Score</div>
+                        <div class="credit-score-value">{{ member.credit_score }}</div>
+                        <div class="progress progress-thin">
+                            <div class="progress-bar bg-light" role="progressbar" 
+                                 style="width: {{ member.credit_score|floatformat:0 }}%;" 
+                                 aria-valuenow="{{ member.credit_score }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="1000">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-label">Risk Rating</div>
+                        <div class="info-value">
+                            <span class="risk-badge risk-{{ member.risk_rating }}">
+                                {{ member.get_risk_rating_display }}
+                            </span>
+                        </div>
+                    </div>
+
+                    {% if member.risk_assessment_date %}
+                    <div class="info-row">
+                        <div class="info-label">Last Assessment</div>
+                        <div class="info-value">{{ member.risk_assessment_date|date:"M d, Y" }}</div>
+                    </div>
+                    {% endif %}
+
+                    {% if member.risk_assessment_notes %}
+                    <div class="mt-3">
+                        <strong>Assessment Notes:</strong>
+                        <p class="mb-0 mt-2 text-muted small">{{ member.risk_assessment_notes }}</p>
+                    </div>
+                    {% endif %}
+
+                    <div class="mt-3">
+                        <button class="btn btn-sm btn-outline-primary w-100">
+                            <i class="fa fa-sync-alt me-1"></i> Recalculate Score
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+                <!-- Membership Timeline -->
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <span><i class="fa fa-history me-2"></i>Membership Timeline</span>
+                    </div>
+                    <div class="info-card-body">
+                        <div class="timeline">
+                            {% if member.membership_approved_date %}
+                            <div class="timeline-item">
+                                <div class="timeline-date">{{ member.membership_approved_date|date:"M d, Y" }}</div>
+                                <div class="timeline-content">
+                                    <i class="fa fa-check-circle text-success me-1"></i>
+                                    Membership Approved
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <div class="timeline-item">
+                                <div class="timeline-date">{{ member.membership_date|date:"M d, Y" }}</div>
+                                <div class="timeline-content">
+                                    <i class="fa fa-user-plus text-primary me-1"></i>
+                                    Became Member ({{ member.get_member_category_display }})
+                                </div>
+                            </div>
+
+                            {% if member.membership_application_date %}
+                            <div class="timeline-item">
+                                <div class="timeline-date">{{ member.membership_application_date|date:"M d, Y" }}</div>
+                                <div class="timeline-content">
+                                    <i class="fa fa-file-alt text-info me-1"></i>
+                                    Application Submitted
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        {% if member.status_changed_reason %}
+                        <hr class="section-divider">
+                        <div class="mt-3">
+                            <strong>Last Status Change:</strong>
+                            <p class="mb-0 mt-2 text-muted small">
+                                <i class="fa fa-info-circle me-1"></i>
+                                {{ member.status_changed_reason }}
+                            </p>
+                            <small class="text-muted">{{ member.status_changed_date|date:"M d, Y - h:i A" }}</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Prevent page scroll when clicking tabs
+    document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+        tab.addEventListener('click', function (e) {
+            e.preventDefault();
+            
+            // Activate the tab using Bootstrap's tab API
+            const tabTrigger = new bootstrap.Tab(this);
+            tabTrigger.show();
+        });
+    });
+
+    // Smooth scroll for anchor links (excluding tabs)
+    document.querySelectorAll('a[href^="#"]:not([data-bs-toggle="tab"])').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            const href = this.getAttribute('href');
+            if (href !== '#') {
+                e.preventDefault();
+                const target = document.querySelector(href);
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            }
+        });
+    });
+
+    console.log('Member Profile JavaScript loaded successfully');
+});
+</script>
+{% endblock %}

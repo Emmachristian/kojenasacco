@@ -6,28 +6,19 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
-from djmoney.models.fields import MoneyField
-from djmoney.money import Money
 from decimal import Decimal
 import uuid
 from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 from django.db.models import Q, Sum, Count, F
 
-from sacco_settings.models import (
-    BaseModel, 
-    SaccoConfiguration, 
-    FinancialPeriod, 
-    PaymentMethod,
-    TaxRate,
-    get_sacco_config,
-    format_money,
-    get_base_currency
-)
-from members.models import Member, MemberGroup
+from utils.models import BaseModel
+from core.utils import get_base_currency, format_money, get_active_fiscal_period
+
 import logging
 
 logger = logging.getLogger(__name__)
+
 
 # =============================================================================
 # SAVINGS PRODUCTS - CONFIGURATION FOR DIFFERENT SAVINGS TYPES
@@ -63,14 +54,6 @@ class SavingsProduct(BaseModel):
         ('ANNUALLY', _('Annually')),
     ]
     
-    MAINTENANCE_FREQUENCY_CHOICES = [
-        ('NONE', _('None')),
-        ('WEEKLY', _('Weekly')),
-        ('MONTHLY', _('Monthly')),
-        ('QUARTERLY', _('Quarterly')),
-        ('ANNUALLY', _('Annually')),
-    ]
-    
     # Basic Product Information
     name = models.CharField(
         _("Product Name"),
@@ -95,7 +78,7 @@ class SavingsProduct(BaseModel):
         _("Interest Rate (%)"),
         max_digits=8,
         decimal_places=5,
-        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        validators=[MinValueValidator(Decimal('0')), MaxValueValidator(Decimal('100'))],
         help_text=_("Annual interest rate in percentage")
     )
     
@@ -121,54 +104,58 @@ class SavingsProduct(BaseModel):
     )
     
     # Balance Requirements
-    minimum_opening_balance = MoneyField(
+    minimum_opening_balance = models.DecimalField(
         _("Minimum Opening Balance"),
         max_digits=12,
         decimal_places=2,
-        default_currency='UGX',
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0'))],
         help_text=_("Minimum amount required to open account")
     )
     
-    minimum_balance = MoneyField(
+    minimum_balance = models.DecimalField(
         _("Minimum Balance"),
         max_digits=12,
         decimal_places=2,
-        default_currency='UGX',
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0'))],
         help_text=_("Minimum balance to maintain")
     )
     
-    maximum_balance = MoneyField(
+    maximum_balance = models.DecimalField(
         _("Maximum Balance"),
         max_digits=12,
         decimal_places=2,
         null=True,
         blank=True,
-        default_currency='UGX',
+        validators=[MinValueValidator(Decimal('0'))],
         help_text=_("Maximum balance allowed (blank for no limit)")
     )
     
     # Transaction Limits
-    minimum_deposit_amount = MoneyField(
+    minimum_deposit_amount = models.DecimalField(
         _("Minimum Deposit Amount"),
         max_digits=12,
         decimal_places=2,
-        default_currency='UGX'
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0'))]
     )
     
-    minimum_withdrawal_amount = MoneyField(
+    minimum_withdrawal_amount = models.DecimalField(
         _("Minimum Withdrawal Amount"),
         max_digits=12,
         decimal_places=2,
-        default_currency='UGX'
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0'))]
     )
     
-    maximum_withdrawal_amount = MoneyField(
+    maximum_withdrawal_amount = models.DecimalField(
         _("Maximum Withdrawal Amount"),
         max_digits=12,
         decimal_places=2,
         null=True,
         blank=True,
-        default_currency='UGX',
+        validators=[MinValueValidator(Decimal('0'))],
         help_text=_("Maximum withdrawal amount (blank for no limit)")
     )
     
@@ -179,11 +166,12 @@ class SavingsProduct(BaseModel):
         help_text=_("Whether this product allows overdrafts")
     )
     
-    overdraft_limit = MoneyField(
+    overdraft_limit = models.DecimalField(
         _("Overdraft Limit"),
         max_digits=12,
         decimal_places=2,
-        default=Money(0, 'UGX'),
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0'))],
         help_text=_("Maximum overdraft amount allowed")
     )
     
@@ -192,15 +180,16 @@ class SavingsProduct(BaseModel):
         max_digits=8,
         decimal_places=5,
         default=Decimal('0.00'),
-        validators=[MinValueValidator(0), MaxValueValidator(100)]
+        validators=[MinValueValidator(Decimal('0')), MaxValueValidator(Decimal('100'))]
     )
     
     # Fee Structure
-    withdrawal_fee_flat = MoneyField(
+    withdrawal_fee_flat = models.DecimalField(
         _("Withdrawal Fee (Flat)"),
         max_digits=10,
         decimal_places=2,
-        default=Money(0, 'UGX')
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0'))]
     )
     
     withdrawal_fee_percentage = models.DecimalField(
@@ -208,14 +197,15 @@ class SavingsProduct(BaseModel):
         max_digits=5,
         decimal_places=2,
         default=Decimal('0.00'),
-        validators=[MinValueValidator(0), MaxValueValidator(100)]
+        validators=[MinValueValidator(Decimal('0')), MaxValueValidator(Decimal('100'))]
     )
     
-    deposit_fee_flat = MoneyField(
+    deposit_fee_flat = models.DecimalField(
         _("Deposit Fee (Flat)"),
         max_digits=10,
         decimal_places=2,
-        default=Money(0, 'UGX')
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0'))]
     )
     
     deposit_fee_percentage = models.DecimalField(
@@ -223,38 +213,44 @@ class SavingsProduct(BaseModel):
         max_digits=5,
         decimal_places=2,
         default=Decimal('0.00'),
-        validators=[MinValueValidator(0), MaxValueValidator(100)]
+        validators=[MinValueValidator(Decimal('0')), MaxValueValidator(Decimal('100'))]
     )
     
     # Account Maintenance
     dormancy_period_days = models.PositiveIntegerField(
         _("Dormancy Period (Days)"),
         default=90,
+        validators=[MinValueValidator(1)],
         help_text=_("Days of inactivity before account becomes dormant")
     )
     
-    dormancy_fee = MoneyField(
-        _("Dormancy Fee"),
-        max_digits=10,
-        decimal_places=2,
-        default=Money(0, 'UGX')
-    )
-    
-    account_maintenance_fee = MoneyField(
+    account_maintenance_fee = models.DecimalField(
         _("Account Maintenance Fee"),
         max_digits=10,
         decimal_places=2,
-        default=Money(0, 'UGX')
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0'))]
     )
     
-    account_maintenance_frequency = models.CharField(
+    maintenance_fee_frequency = models.CharField(
         _("Maintenance Fee Frequency"),
         max_length=15,
-        choices=MAINTENANCE_FREQUENCY_CHOICES,
+        choices=[
+            ('NONE', _('None')),
+            ('MONTHLY', _('Monthly')),
+            ('QUARTERLY', _('Quarterly')),
+            ('ANNUALLY', _('Annually')),
+        ],
         default='NONE'
     )
     
-    # Term-based Products (Fixed Deposits)
+    # Fixed Deposit Configuration
+    is_fixed_deposit = models.BooleanField(
+        _("Is Fixed Deposit"),
+        default=False,
+        help_text=_("Whether this is a fixed deposit product")
+    )
+    
     minimum_term_days = models.PositiveIntegerField(
         _("Minimum Term (Days)"),
         default=0,
@@ -273,19 +269,11 @@ class SavingsProduct(BaseModel):
         max_digits=5,
         decimal_places=2,
         default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0')), MaxValueValidator(Decimal('100'))],
         help_text=_("Penalty as percentage of withdrawn amount")
     )
     
-    # Tax Configuration
-    withholding_tax_rate = models.DecimalField(
-        _("Withholding Tax Rate (%)"),
-        max_digits=5,
-        decimal_places=2,
-        default=Decimal('0.00'),
-        help_text=_("Tax rate on interest earned")
-    )
-    
-    # Product Status and Type
+    # Product Status
     is_active = models.BooleanField(
         _("Is Active"),
         default=True,
@@ -310,81 +298,82 @@ class SavingsProduct(BaseModel):
         help_text=_("Whether this is the primary/main savings product")
     )
     
-    is_fixed_deposit = models.BooleanField(
-        _("Is Fixed Deposit"),
-        default=False,
-        help_text=_("Whether this is a fixed deposit product")
-    )
-    
-    # Integration fields
-    gl_account_code_savings = models.CharField(
-        _("GL Account Code - Savings"),
+    # GL Integration
+    gl_account_code = models.CharField(
+        _("GL Account Code"),
         max_length=20,
         null=True,
         blank=True,
-        help_text=_("General Ledger account code for savings")
-    )
-    
-    gl_account_code_interest = models.CharField(
-        _("GL Account Code - Interest"),
-        max_length=20,
-        null=True,
-        blank=True,
-        help_text=_("General Ledger account code for interest expense")
-    )
-    
-    gl_account_code_fees = models.CharField(
-        _("GL Account Code - Fees"),
-        max_length=20,
-        null=True,
-        blank=True,
-        help_text=_("General Ledger account code for fee income")
+        help_text=_("General Ledger account code")
     )
     
     # Product Limits
     maximum_accounts_per_member = models.PositiveIntegerField(
         _("Maximum Accounts Per Member"),
         default=1,
+        validators=[MinValueValidator(1)],
         help_text=_("Maximum number of accounts of this type per member")
     )
     
     @property
     def currency(self):
         """Get the currency for this product from SACCO configuration"""
-        try:
-            return get_base_currency()
-        except:
-            return 'UGX'  # Fallback
+        return get_base_currency()
     
-    def get_applicable_interest_rate(self, balance=None, account=None):
+    @property
+    def formatted_minimum_balance(self):
+        """Get formatted minimum balance"""
+        return format_money(self.minimum_balance)
+    
+    @property
+    def formatted_minimum_opening_balance(self):
+        """Get formatted minimum opening balance"""
+        return format_money(self.minimum_opening_balance)
+    
+    @property
+    def formatted_maximum_balance(self):
+        """Get formatted maximum balance"""
+        return format_money(self.maximum_balance) if self.maximum_balance else _("No limit")
+    
+    def calculate_withdrawal_fee(self, amount):
+        """Calculate withdrawal fee for given amount"""
+        try:
+            amount_decimal = Decimal(str(amount))
+            flat_fee = self.withdrawal_fee_flat
+            percentage_fee = (amount_decimal * self.withdrawal_fee_percentage) / Decimal('100')
+            return flat_fee + percentage_fee
+        except (ValueError, TypeError):
+            return Decimal('0.00')
+    
+    def calculate_deposit_fee(self, amount):
+        """Calculate deposit fee for given amount"""
+        try:
+            amount_decimal = Decimal(str(amount))
+            flat_fee = self.deposit_fee_flat
+            percentage_fee = (amount_decimal * self.deposit_fee_percentage) / Decimal('100')
+            return flat_fee + percentage_fee
+        except (ValueError, TypeError):
+            return Decimal('0.00')
+    
+    def get_applicable_interest_rate(self, balance=None):
         """Get applicable interest rate based on balance tiers"""
-        if self.interest_calculation_method != 'TIERED':
+        if self.interest_calculation_method != 'TIERED' or not balance:
             return self.interest_rate
         
-        if not balance:
-            return self.interest_rate
-        
-        # Check for custom account-specific tiers first
-        if account:
-            custom_tier = account.custom_interest_tiers.filter(
+        try:
+            balance_decimal = Decimal(str(balance))
+            
+            # Check product-level tiers
+            tier = self.interest_tiers.filter(
                 is_active=True,
-                min_balance__lte=balance.amount
+                min_balance__lte=balance_decimal
             ).filter(
-                models.Q(max_balance__isnull=True) | models.Q(max_balance__gte=balance.amount)
+                Q(max_balance__isnull=True) | Q(max_balance__gte=balance_decimal)
             ).order_by('-min_balance').first()
             
-            if custom_tier:
-                return custom_tier.interest_rate
-        
-        # Check product-level tiers
-        tier = self.interest_tiers.filter(
-            is_active=True,
-            min_balance__lte=balance.amount
-        ).filter(
-            models.Q(max_balance__isnull=True) | models.Q(max_balance__gte=balance.amount)
-        ).order_by('-min_balance').first()
-        
-        return tier.interest_rate if tier else self.interest_rate
+            return tier.interest_rate if tier else self.interest_rate
+        except (ValueError, TypeError):
+            return self.interest_rate
     
     @classmethod
     def get_active_products(cls):
@@ -396,6 +385,26 @@ class SavingsProduct(BaseModel):
         """Get the main/primary savings product"""
         return cls.objects.filter(is_main_account=True, is_active=True).first()
     
+    def clean(self):
+        """Validate product configuration"""
+        super().clean()
+        errors = {}
+        
+        if self.minimum_balance > self.minimum_opening_balance:
+            errors['minimum_balance'] = _("Minimum balance cannot be greater than minimum opening balance")
+        
+        if self.maximum_balance and self.maximum_balance < self.minimum_opening_balance:
+            errors['maximum_balance'] = _("Maximum balance must be greater than minimum opening balance")
+        
+        if self.is_fixed_deposit and self.minimum_term_days <= 0:
+            errors['minimum_term_days'] = _("Fixed deposits must have a minimum term")
+        
+        if self.maximum_term_days and self.minimum_term_days > self.maximum_term_days:
+            errors['maximum_term_days'] = _("Maximum term must be greater than minimum term")
+        
+        if errors:
+            raise ValidationError(errors)
+    
     def __str__(self):
         return f"{self.name} ({self.code})"
     
@@ -403,7 +412,16 @@ class SavingsProduct(BaseModel):
         verbose_name = _("Savings Product")
         verbose_name_plural = _("Savings Products")
         ordering = ['name']
+        indexes = [
+            models.Index(fields=['is_active', 'name']),
+            models.Index(fields=['code']),
+            models.Index(fields=['is_main_account']),
+        ]
 
+
+# =============================================================================
+# INTEREST TIER MODEL
+# =============================================================================
 
 class InterestTier(BaseModel):
     """Interest rate tiers for tiered savings products"""
@@ -411,7 +429,8 @@ class InterestTier(BaseModel):
     savings_product = models.ForeignKey(
         SavingsProduct,
         on_delete=models.CASCADE,
-        related_name='interest_tiers'
+        related_name='interest_tiers',
+        help_text=_("Savings product this tier belongs to")
     )
     
     tier_name = models.CharField(
@@ -420,20 +439,21 @@ class InterestTier(BaseModel):
         help_text=_("Name of this interest tier")
     )
     
-    min_balance = MoneyField(
+    min_balance = models.DecimalField(
         _("Minimum Balance"),
         max_digits=12,
         decimal_places=2,
-        default_currency='UGX'
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0'))]
     )
     
-    max_balance = MoneyField(
+    max_balance = models.DecimalField(
         _("Maximum Balance"),
         max_digits=12,
         decimal_places=2,
         null=True,
         blank=True,
-        default_currency='UGX',
+        validators=[MinValueValidator(Decimal('0'))],
         help_text=_("Maximum balance for this tier (blank for no upper limit)")
     )
     
@@ -441,7 +461,7 @@ class InterestTier(BaseModel):
         _("Interest Rate (%)"),
         max_digits=8,
         decimal_places=5,
-        validators=[MinValueValidator(0), MaxValueValidator(100)]
+        validators=[MinValueValidator(Decimal('0')), MaxValueValidator(Decimal('100'))]
     )
     
     is_active = models.BooleanField(
@@ -449,14 +469,39 @@ class InterestTier(BaseModel):
         default=True
     )
     
+    @property
+    def formatted_min_balance(self):
+        """Get formatted minimum balance"""
+        return format_money(self.min_balance)
+    
+    @property
+    def formatted_max_balance(self):
+        """Get formatted maximum balance"""
+        return format_money(self.max_balance) if self.max_balance else _("No limit")
+    
+    def clean(self):
+        """Validate tier"""
+        super().clean()
+        errors = {}
+        
+        if self.max_balance and self.min_balance >= self.max_balance:
+            errors['max_balance'] = _("Maximum balance must be greater than minimum balance")
+        
+        if errors:
+            raise ValidationError(errors)
+    
     def __str__(self):
-        max_display = format_money(self.max_balance) if self.max_balance else "No limit"
-        return f"{self.tier_name}: {format_money(self.min_balance)} - {max_display} ({self.interest_rate}%)"
+        max_display = self.formatted_max_balance
+        return f"{self.tier_name}: {self.formatted_min_balance} - {max_display} ({self.interest_rate}%)"
     
     class Meta:
         verbose_name = _("Interest Tier")
         verbose_name_plural = _("Interest Tiers")
-        ordering = ['min_balance']
+        ordering = ['savings_product', 'min_balance']
+        indexes = [
+            models.Index(fields=['savings_product', 'is_active']),
+            models.Index(fields=['min_balance']),
+        ]
 
 
 # =============================================================================
@@ -464,10 +509,7 @@ class InterestTier(BaseModel):
 # =============================================================================
 
 class SavingsAccount(BaseModel):
-    """
-    Individual member savings accounts.
-    Integrated with Member model and SACCO configuration.
-    """
+    """Individual member savings accounts"""
     
     STATUS_CHOICES = [
         ('ACTIVE', _('Active')),
@@ -486,61 +528,68 @@ class SavingsAccount(BaseModel):
         help_text=_("Unique account number")
     )
     
-    # Relationships
+    # Relationships - Using string references for ForeignKeys
     member = models.ForeignKey(
-        Member,
+        'members.Member',
         on_delete=models.CASCADE,
-        related_name='savings_accounts'
+        related_name='savings_accounts',
+        help_text=_("Member who owns this account")
     )
     
     group = models.ForeignKey(
-        MemberGroup,
+        'members.MemberGroup',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='group_savings_accounts'
+        related_name='group_savings_accounts',
+        help_text=_("Group this account belongs to (if any)")
     )
     
     savings_product = models.ForeignKey(
         SavingsProduct,
         on_delete=models.PROTECT,
-        related_name='accounts'
+        related_name='accounts',
+        help_text=_("Savings product type")
     )
     
     # Balance Information
-    current_balance = MoneyField(
+    current_balance = models.DecimalField(
         _("Current Balance"),
         max_digits=15,
         decimal_places=2,
-        default=Money(0, 'UGX')
+        default=Decimal('0.00')
     )
     
-    available_balance = MoneyField(
+    available_balance = models.DecimalField(
         _("Available Balance"),
         max_digits=15,
         decimal_places=2,
-        default=Money(0, 'UGX')
+        default=Decimal('0.00'),
+        help_text=_("Balance available for withdrawal (current - holds)")
     )
     
-    hold_amount = MoneyField(
+    hold_amount = models.DecimalField(
         _("Hold Amount"),
         max_digits=15,
         decimal_places=2,
-        default=Money(0, 'UGX')
+        default=Decimal('0.00'),
+        help_text=_("Amount on hold (not available for withdrawal)")
     )
     
-    overdraft_amount = MoneyField(
+    overdraft_amount = models.DecimalField(
         _("Overdraft Amount"),
         max_digits=15,
         decimal_places=2,
-        default=Money(0, 'UGX')
+        default=Decimal('0.00'),
+        help_text=_("Current overdraft balance")
     )
     
-    accrued_interest = MoneyField(
+    accrued_interest = models.DecimalField(
         _("Accrued Interest"),
         max_digits=12,
         decimal_places=2,
-        default=Money(0, 'UGX')
+        default=Decimal('0.00'),
+        help_text=_("Interest earned but not yet posted")
     )
     
     # Account Status and Dates
@@ -548,34 +597,38 @@ class SavingsAccount(BaseModel):
         _("Account Status"),
         max_length=20,
         choices=STATUS_CHOICES,
-        default='PENDING_APPROVAL'
+        default='PENDING_APPROVAL',
+        db_index=True
     )
     
     opening_date = models.DateField(
         _("Opening Date"),
-        default=timezone.now
+        default=timezone.now,
+        help_text=_("Date when account was opened")
     )
     
     activated_date = models.DateField(
         _("Activated Date"),
         null=True,
-        blank=True
+        blank=True,
+        help_text=_("Date when account was activated")
     )
     
     closure_date = models.DateField(
         _("Closure Date"),
         null=True,
-        blank=True
+        blank=True,
+        help_text=_("Date when account was closed")
     )
     
     maturity_date = models.DateField(
         _("Maturity Date"),
         null=True,
         blank=True,
-        help_text=_("For fixed deposits")
+        help_text=_("For fixed deposits - when deposit matures")
     )
     
-    # Interest and Fee Tracking
+    # Interest Tracking
     last_interest_calculated_date = models.DateField(
         _("Last Interest Calculated"),
         null=True,
@@ -588,10 +641,12 @@ class SavingsAccount(BaseModel):
         blank=True
     )
     
-    last_fee_charged_date = models.DateField(
-        _("Last Fee Charged"),
-        null=True,
-        blank=True
+    total_interest_earned = models.DecimalField(
+        _("Total Interest Earned"),
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        help_text=_("Total interest earned since opening")
     )
     
     # Fixed Deposit Specific Fields
@@ -607,13 +662,13 @@ class SavingsAccount(BaseModel):
         help_text=_("Term length for fixed deposits")
     )
     
-    fixed_deposit_amount = MoneyField(
+    fixed_deposit_amount = models.DecimalField(
         _("Fixed Deposit Amount"),
         max_digits=15,
         decimal_places=2,
         null=True,
         blank=True,
-        default_currency='UGX'
+        help_text=_("Initial fixed deposit amount")
     )
     
     auto_renew = models.BooleanField(
@@ -622,40 +677,16 @@ class SavingsAccount(BaseModel):
         help_text=_("Whether to automatically renew fixed deposit")
     )
     
-    # Account Specific Settings
-    nominated_transfer_account = models.ForeignKey(
-        'self',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='nominated_from_accounts',
-        help_text=_("Default account for transfers")
-    )
-    
-    overdraft_limit = MoneyField(
+    # Account Settings
+    overdraft_limit = models.DecimalField(
         _("Overdraft Limit"),
         max_digits=12,
         decimal_places=2,
-        default=Money(0, 'UGX')
+        default=Decimal('0.00')
     )
     
     overdraft_expiry_date = models.DateField(
         _("Overdraft Expiry Date"),
-        null=True,
-        blank=True
-    )
-    
-    daily_withdrawal_limit = MoneyField(
-        _("Daily Withdrawal Limit"),
-        max_digits=12,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        default_currency='UGX'
-    )
-    
-    withdrawals_remaining_today = models.PositiveIntegerField(
-        _("Withdrawals Remaining Today"),
         null=True,
         blank=True
     )
@@ -668,17 +699,25 @@ class SavingsAccount(BaseModel):
         unique=True
     )
     
-    # =============================================================================
-    # COMPUTED PROPERTIES (Keep these as they're used in templates/views)
-    # =============================================================================
-    
     @property
     def currency(self):
         """Get account currency from SACCO configuration"""
-        try:
-            return get_base_currency()
-        except:
-            return 'UGX'
+        return get_base_currency()
+    
+    @property
+    def formatted_current_balance(self):
+        """Get formatted current balance"""
+        return format_money(self.current_balance)
+    
+    @property
+    def formatted_available_balance(self):
+        """Get formatted available balance"""
+        return format_money(self.available_balance)
+    
+    @property
+    def formatted_accrued_interest(self):
+        """Get formatted accrued interest"""
+        return format_money(self.accrued_interest)
     
     @property
     def last_transaction_date(self):
@@ -692,12 +731,14 @@ class SavingsAccount(BaseModel):
         if self.status in ['CLOSED', 'FROZEN', 'SUSPENDED']:
             return self.status
         
-        if self.member.status == 'SUSPENDED':
-            return 'FROZEN'
-        elif self.member.status in ['DECEASED', 'TERMINATED']:
-            return 'CLOSED'
-        elif self.member.status == 'BLACKLISTED':
-            return 'FROZEN'
+        # Check member status
+        if hasattr(self.member, 'status'):
+            if self.member.status == 'SUSPENDED':
+                return 'FROZEN'
+            elif self.member.status in ['DECEASED', 'TERMINATED']:
+                return 'CLOSED'
+            elif self.member.status == 'BLACKLISTED':
+                return 'FROZEN'
         
         return self.status
     
@@ -710,7 +751,7 @@ class SavingsAccount(BaseModel):
     
     @property
     def days_to_maturity(self):
-        """Days until fixed deposit matures - NEEDED by utils functions"""
+        """Days until fixed deposit matures"""
         if not self.is_fixed_deposit or not self.maturity_date:
             return None
         
@@ -720,9 +761,19 @@ class SavingsAccount(BaseModel):
         
         return (self.maturity_date - today).days
     
-    # =============================================================================
-    # CLASSMETHOD QUERIES (Keep these as they're commonly used)
-    # =============================================================================
+    @property
+    def account_age_days(self):
+        """Get account age in days"""
+        return (timezone.now().date() - self.opening_date).days
+    
+    @property
+    def is_dormant_eligible(self):
+        """Check if account is eligible to be marked as dormant"""
+        if not self.last_transaction_date:
+            return False
+        
+        days_inactive = (timezone.now().date() - self.last_transaction_date).days
+        return days_inactive >= self.savings_product.dormancy_period_days
     
     @classmethod
     def get_member_total_balance(cls, member):
@@ -734,11 +785,7 @@ class SavingsAccount(BaseModel):
             total=Sum('current_balance')
         )['total']
         
-        if total:
-            currency = get_base_currency()
-            return Money(total, currency)
-        
-        return Money(0, get_base_currency())
+        return Decimal(total or 0)
     
     @classmethod
     def get_member_primary_account(cls, member):
@@ -757,54 +804,17 @@ class SavingsAccount(BaseModel):
             status__in=['ACTIVE', 'DORMANT']
         ).order_by('opening_date').first()
     
-    @classmethod
-    def get_member_account_summary(cls, member):
-        """Get comprehensive account summary - NEEDED by get_member_savings_summary() in utils"""
-        accounts = cls.objects.filter(member=member)
-        
-        summary = {
-            'total_accounts': accounts.count(),
-            'active_accounts': accounts.filter(status='ACTIVE').count(),
-            'dormant_accounts': accounts.filter(status='DORMANT').count(),
-            'closed_accounts': accounts.filter(status='CLOSED').count(),
-            'total_balance': cls.get_member_total_balance(member),
-            'primary_account': cls.get_member_primary_account(member),
-            'accounts': []
-        }
-        
-        # Add detailed account information
-        for account in accounts:
-            summary['accounts'].append({
-                'id': account.id,
-                'account_number': account.account_number,
-                'product': account.savings_product.name,
-                'balance': account.current_balance,
-                'available_balance': account.available_balance,
-                'status': account.effective_status,
-                'last_transaction': account.last_transaction_date,
-                'is_fixed_deposit': account.is_fixed_deposit,
-                'maturity_date': account.maturity_date,
-                'days_to_maturity': account.days_to_maturity,
-            })
-        
-        return summary
-    
-    # =============================================================================
-    # ESSENTIAL METHODS (NEEDED BY UTILS.PY)
-    # =============================================================================
-    
-    def approve_account(self, approved_by_user=None):
-        """Approve pending account - NEEDED by approve_pending_accounts() in utils"""
+    def approve_account(self):
+        """Approve pending account"""
         if self.status != 'PENDING_APPROVAL':
             return False, _("Account is not pending approval")
         
-        # Check if member is active
-        if self.member.status != 'ACTIVE':
+        if hasattr(self.member, 'status') and self.member.status != 'ACTIVE':
             return False, _("Member must be active to approve account")
         
-        # Check minimum balance requirement
         if self.current_balance < self.savings_product.minimum_opening_balance:
-            return False, _(f"Minimum opening balance of {format_money(self.savings_product.minimum_opening_balance)} required")
+            min_bal_formatted = format_money(self.savings_product.minimum_opening_balance)
+            return False, _(f"Minimum opening balance of {min_bal_formatted} required")
         
         self.status = 'ACTIVE'
         self.activated_date = timezone.now().date()
@@ -813,54 +823,57 @@ class SavingsAccount(BaseModel):
         logger.info(f"Account {self.account_number} approved")
         return True, _("Account approved successfully")
     
-    def update_dormancy_status(self):
-        """Update dormancy status - NEEDED by update_dormancy_status() in utils"""
-        if self.status in ['CLOSED', 'FROZEN', 'SUSPENDED']:
-            return
-        
-        # Check transaction activity
-        last_transaction = self.last_transaction_date
-        if not last_transaction:
-            is_dormant = True
-        else:
-            days_inactive = (timezone.now().date() - last_transaction).days
-            is_dormant = days_inactive > self.savings_product.dormancy_period_days
-        
-        if is_dormant and self.status != 'DORMANT':
-            self.status = 'DORMANT'
-            self.save(update_fields=['status'])
-            logger.info(f"Account {self.account_number} marked as dormant")
-        elif not is_dormant and self.status == 'DORMANT':
-            self.status = 'ACTIVE'
-            self.save(update_fields=['status'])
-            logger.info(f"Account {self.account_number} reactivated from dormancy")
-    
-    # Simple validation methods (keep basic ones)
     def is_withdrawal_allowed(self, amount):
-        """Basic withdrawal validation - detailed logic moved to utils"""
-        if not isinstance(amount, Money):
-            amount = Money(amount, self.currency)
+        """Basic withdrawal validation"""
+        try:
+            amount_decimal = Decimal(str(amount))
+        except (ValueError, TypeError):
+            return False, _("Invalid amount")
         
         if self.effective_status not in ['ACTIVE', 'DORMANT']:
             return False, f"Account status is {self.get_status_display()}"
         
-        if amount > self.available_balance:
-            return False, "Insufficient available balance"
+        if amount_decimal > self.available_balance:
+            return False, _("Insufficient available balance")
         
-        return True, "Withdrawal allowed"
+        if amount_decimal < self.savings_product.minimum_withdrawal_amount:
+            min_formatted = format_money(self.savings_product.minimum_withdrawal_amount)
+            return False, _(f"Amount below minimum withdrawal of {min_formatted}")
+        
+        if self.savings_product.maximum_withdrawal_amount:
+            if amount_decimal > self.savings_product.maximum_withdrawal_amount:
+                max_formatted = format_money(self.savings_product.maximum_withdrawal_amount)
+                return False, _(f"Amount exceeds maximum withdrawal of {max_formatted}")
+        
+        return True, _("Withdrawal allowed")
     
     def is_deposit_allowed(self, amount):
-        """Basic deposit validation - detailed logic moved to utils"""
-        if not isinstance(amount, Money):
-            amount = Money(amount, self.currency)
+        """Basic deposit validation"""
+        try:
+            amount_decimal = Decimal(str(amount))
+        except (ValueError, TypeError):
+            return False, _("Invalid amount")
         
         if self.effective_status not in ['ACTIVE', 'DORMANT', 'PENDING_APPROVAL']:
             return False, f"Account status is {self.get_status_display()}"
         
-        return True, "Deposit allowed"
+        if amount_decimal < self.savings_product.minimum_deposit_amount:
+            min_formatted = format_money(self.savings_product.minimum_deposit_amount)
+            return False, _(f"Amount below minimum deposit of {min_formatted}")
+        
+        if self.savings_product.maximum_balance:
+            if (self.current_balance + amount_decimal) > self.savings_product.maximum_balance:
+                return False, _("Deposit would exceed maximum balance limit")
+        
+        return True, _("Deposit allowed")
+    
+    def update_available_balance(self):
+        """Update available balance based on current balance and holds"""
+        self.available_balance = max(self.current_balance - self.hold_amount, Decimal('0.00'))
+        self.save(update_fields=['available_balance'])
     
     def __str__(self):
-        return f"{self.account_number} - {self.member.full_name}"
+        return f"{self.account_number} - {self.member.get_full_name()}"
     
     class Meta:
         verbose_name = _("Savings Account")
@@ -879,10 +892,7 @@ class SavingsAccount(BaseModel):
 # =============================================================================
 
 class SavingsTransaction(BaseModel):
-    """
-    Transactions on savings accounts.
-    Integrated with PaymentMethod and TaxRate models from sacco_settings.
-    """
+    """Transactions on savings accounts"""
     
     TRANSACTION_TYPES = [
         ('DEPOSIT', _('Deposit')),
@@ -895,11 +905,7 @@ class SavingsTransaction(BaseModel):
         ('ADJUSTMENT', _('Adjustment')),
         ('REVERSAL', _('Reversal')),
         ('DIVIDEND', _('Dividend')),
-        ('LOAN_REPAYMENT', _('Loan Repayment')),
-        ('LOAN_DISBURSEMENT', _('Loan Disbursement')),
-        ('PENALTY', _('Penalty')),
         ('MAINTENANCE_FEE', _('Maintenance Fee')),
-        ('DORMANCY_FEE', _('Dormancy Fee')),
     ]
     
     # Transaction Identification
@@ -914,34 +920,36 @@ class SavingsTransaction(BaseModel):
     account = models.ForeignKey(
         SavingsAccount,
         on_delete=models.CASCADE,
-        related_name='transactions'
+        related_name='transactions',
+        help_text=_("Savings account this transaction belongs to")
     )
     
     transaction_type = models.CharField(
         _("Transaction Type"),
         max_length=20,
-        choices=TRANSACTION_TYPES
+        choices=TRANSACTION_TYPES,
+        db_index=True
     )
     
-    amount = MoneyField(
+    amount = models.DecimalField(
         _("Transaction Amount"),
         max_digits=15,
         decimal_places=2,
-        default_currency='UGX'
+        validators=[MinValueValidator(Decimal('0.01'))]
     )
     
-    fees = MoneyField(
+    fees = models.DecimalField(
         _("Fees"),
         max_digits=12,
         decimal_places=2,
-        default=Money(0, 'UGX')
+        default=Decimal('0.00')
     )
     
-    tax_amount = MoneyField(
+    tax_amount = models.DecimalField(
         _("Tax Amount"),
         max_digits=12,
         decimal_places=2,
-        default=Money(0, 'UGX')
+        default=Decimal('0.00')
     )
     
     # Transaction Timing
@@ -952,7 +960,8 @@ class SavingsTransaction(BaseModel):
     
     post_date = models.DateField(
         _("Post Date"),
-        default=timezone.now
+        default=timezone.now,
+        help_text=_("Date transaction is posted to account")
     )
     
     value_date = models.DateField(
@@ -963,7 +972,7 @@ class SavingsTransaction(BaseModel):
     
     # Payment Information
     payment_method = models.ForeignKey(
-        PaymentMethod,
+        'core.PaymentMethod',
         on_delete=models.PROTECT,
         null=True,
         blank=True,
@@ -975,7 +984,7 @@ class SavingsTransaction(BaseModel):
         max_length=100,
         null=True,
         blank=True,
-        help_text=_("External reference number (e.g., cheque number, mobile money ref)")
+        help_text=_("External reference number (e.g., mobile money ref)")
     )
     
     description = models.TextField(
@@ -1004,24 +1013,17 @@ class SavingsTransaction(BaseModel):
     )
     
     # Balance Information
-    running_balance = MoneyField(
+    running_balance = models.DecimalField(
         _("Running Balance"),
         max_digits=15,
         decimal_places=2,
-        default_currency='UGX'
-    )
-    
-    # Processing Information
-    receipt_number = models.CharField(
-        _("Receipt Number"),
-        max_length=50,
-        null=True,
-        blank=True
+        default=Decimal('0.00'),
+        help_text=_("Account balance after this transaction")
     )
     
     # Financial Period Integration
     financial_period = models.ForeignKey(
-        FinancialPeriod,
+        'core.FiscalPeriod',
         on_delete=models.PROTECT,
         null=True,
         blank=True,
@@ -1046,6 +1048,14 @@ class SavingsTransaction(BaseModel):
         blank=True
     )
     
+    reversed_by_id = models.CharField(
+        _("Reversed By"),
+        max_length=50,
+        null=True,
+        blank=True,
+        help_text=_("User ID who reversed the transaction")
+    )
+    
     original_transaction = models.ForeignKey(
         'self',
         on_delete=models.SET_NULL,
@@ -1055,128 +1065,59 @@ class SavingsTransaction(BaseModel):
         help_text=_("Original transaction being reversed")
     )
     
-    # Integration Fields
-    gl_transaction_reference = models.CharField(
-        _("GL Transaction Reference"),
-        max_length=50,
-        null=True,
-        blank=True,
-        help_text=_("General Ledger transaction reference")
-    )
+    def save(self, *args, **kwargs):
+        """Generate transaction ID and set financial period"""
+        if not self.transaction_id:
+            timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
+            self.transaction_id = f"SAV-{timestamp}"
+        
+        # Set financial period if not set
+        if not self.financial_period:
+            self.financial_period = get_active_fiscal_period()
+        
+        super().save(*args, **kwargs)
+    
+    @property
+    def currency(self):
+        """Get currency from SACCO configuration"""
+        return get_base_currency()
     
     @property
     def net_amount(self):
         """Get net transaction amount (amount - fees - taxes)"""
-        return self.amount - self.fees - self.tax_amount
+        if self.transaction_type in ['WITHDRAWAL', 'TRANSFER_OUT', 'FEE', 'TAX']:
+            return self.amount - self.fees - self.tax_amount
+        return self.amount
     
     @property
     def total_amount(self):
         """Get total transaction amount (amount + fees + taxes)"""
+        if self.transaction_type in ['DEPOSIT', 'TRANSFER_IN']:
+            return self.amount - self.fees - self.tax_amount
         return self.amount + self.fees + self.tax_amount
     
-    # =============================================================================
-    # ESSENTIAL METHODS (NEEDED BY UTILS.PY)
-    # =============================================================================
+    @property
+    def formatted_amount(self):
+        """Get formatted transaction amount"""
+        return format_money(self.amount)
     
-    def reverse_transaction(self, reason, reversed_by_user=None):
-        """Reverse this transaction - NEEDED by reverse_savings_transaction() in utils"""
+    @property
+    def formatted_running_balance(self):
+        """Get formatted running balance"""
+        return format_money(self.running_balance)
+    
+    def reverse(self, reason):
+        """Reverse this transaction"""
         if self.is_reversed:
             return False, _("Transaction is already reversed")
         
-        if self.transaction_type == 'REVERSAL':
-            return False, _("Cannot reverse a reversal transaction")
-        
-        # Create reversal transaction
-        reversal_type_map = {
-            'DEPOSIT': 'WITHDRAWAL',
-            'WITHDRAWAL': 'DEPOSIT',
-            'TRANSFER_IN': 'TRANSFER_OUT',
-            'TRANSFER_OUT': 'TRANSFER_IN',
-            'INTEREST': 'ADJUSTMENT',
-            'FEE': 'ADJUSTMENT',
-        }
-        
-        reversal_type = reversal_type_map.get(self.transaction_type, 'REVERSAL')
-        
-        reversal_transaction = SavingsTransaction(
-            account=self.account,
-            transaction_type=reversal_type,
-            amount=self.amount,
-            fees=self.fees,
-            tax_amount=self.tax_amount,
-            payment_method=self.payment_method,
-            description=f"Reversal of {self.transaction_id}: {reason}",
-            original_transaction=self,
-            linked_account=self.linked_account,
-            financial_period=FinancialPeriod.get_period_for_date(timezone.now().date())
-        )
-        
-        reversal_transaction.save()
-        
-        # Mark original transaction as reversed
         self.is_reversed = True
         self.reversal_reason = reason
         self.reversal_date = timezone.now()
-        self.save(update_fields=['is_reversed', 'reversal_reason', 'reversal_date'])
+        self.save()
         
         logger.info(f"Transaction {self.transaction_id} reversed")
         return True, _("Transaction reversed successfully")
-    
-    @classmethod
-    def get_member_transaction_summary(cls, member, start_date=None, end_date=None):
-        """Get transaction summary for member - NEEDED by generate_member_portfolio_analysis() in utils"""
-        if not start_date:
-            start_date = timezone.now().date() - timedelta(days=30)
-        if not end_date:
-            end_date = timezone.now().date()
-        
-        transactions = cls.objects.filter(
-            account__member=member,
-            transaction_date__date__gte=start_date,
-            transaction_date__date__lte=end_date,
-            is_reversed=False
-        )
-        
-        summary = {
-            'period_start': start_date,
-            'period_end': end_date,
-            'total_transactions': transactions.count(),
-        }
-        
-        # Calculate totals by transaction type
-        for trans_type, display_name in cls.TRANSACTION_TYPES:
-            type_transactions = transactions.filter(transaction_type=trans_type)
-            summary[f'{trans_type.lower()}_count'] = type_transactions.count()
-            summary[f'{trans_type.lower()}_amount'] = type_transactions.aggregate(
-                total=Sum('amount')
-            )['total'] or Decimal('0.00')
-        
-        # Calculate net position
-        credits = transactions.filter(
-            transaction_type__in=['DEPOSIT', 'TRANSFER_IN', 'INTEREST', 'DIVIDEND']
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-        
-        debits = transactions.filter(
-            transaction_type__in=['WITHDRAWAL', 'TRANSFER_OUT', 'FEE', 'TAX', 'PENALTY']
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-        
-        base_currency = get_base_currency()
-        
-        summary['total_credits'] = Money(credits, base_currency)
-        summary['total_debits'] = Money(debits, base_currency)
-        summary['net_amount'] = Money(credits - debits, base_currency)
-        
-        # Calculate fees and taxes
-        summary['total_fees'] = Money(
-            transactions.aggregate(total=Sum('fees'))['total'] or Decimal('0.00'),
-            base_currency
-        )
-        summary['total_taxes'] = Money(
-            transactions.aggregate(total=Sum('tax_amount'))['total'] or Decimal('0.00'),
-            base_currency
-        )
-        
-        return summary
     
     def __str__(self):
         return f"{self.transaction_id} - {self.get_transaction_type_display()} of {format_money(self.amount)}"
@@ -1195,16 +1136,17 @@ class SavingsTransaction(BaseModel):
 
 
 # =============================================================================
-# SUPPORTING MODELS (Simplified - complex logic moved to utils/signals)
+# INTEREST CALCULATIONS
 # =============================================================================
 
 class InterestCalculation(BaseModel):
-    """Record of interest calculations for savings accounts."""
+    """Record of interest calculations for savings accounts"""
     
     account = models.ForeignKey(
         SavingsAccount,
         on_delete=models.CASCADE,
-        related_name='interest_calculations'
+        related_name='interest_calculations',
+        help_text=_("Account this calculation is for")
     )
     
     calculation_date = models.DateField(
@@ -1213,17 +1155,15 @@ class InterestCalculation(BaseModel):
     )
     
     period_start_date = models.DateField(
-        _("Period Start Date"),
-        help_text=_("Start date of interest calculation period")
+        _("Period Start Date")
     )
     
     period_end_date = models.DateField(
-        _("Period End Date"),
-        help_text=_("End date of interest calculation period")
+        _("Period End Date")
     )
     
     financial_period = models.ForeignKey(
-        FinancialPeriod,
+        'core.FiscalPeriod',
         on_delete=models.PROTECT,
         null=True,
         blank=True,
@@ -1236,61 +1176,48 @@ class InterestCalculation(BaseModel):
         choices=SavingsProduct.INTEREST_CALCULATION_METHODS
     )
     
-    # Balance information used in calculation
-    average_balance = MoneyField(
+    # Balance information
+    average_balance = models.DecimalField(
         _("Average Balance"),
         max_digits=15,
         decimal_places=2,
         null=True,
-        blank=True,
-        default_currency='UGX'
+        blank=True
     )
     
-    minimum_balance = MoneyField(
-        _("Minimum Balance"),
-        max_digits=15,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        default_currency='UGX'
-    )
-    
-    opening_balance = MoneyField(
+    opening_balance = models.DecimalField(
         _("Opening Balance"),
         max_digits=15,
         decimal_places=2,
-        default_currency='UGX'
+        default=Decimal('0.00')
     )
     
-    closing_balance = MoneyField(
+    closing_balance = models.DecimalField(
         _("Closing Balance"),
         max_digits=15,
         decimal_places=2,
-        default_currency='UGX'
+        default=Decimal('0.00')
     )
     
-    # Interest calculation details
+    # Interest calculation
     interest_rate = models.DecimalField(
         _("Interest Rate (%)"),
         max_digits=8,
-        decimal_places=5,
-        help_text=_("Interest rate used for calculation")
+        decimal_places=5
     )
     
     days_calculated = models.PositiveIntegerField(
-        _("Days Calculated"),
-        help_text=_("Number of days in calculation period")
+        _("Days Calculated")
     )
     
-    gross_interest = MoneyField(
+    gross_interest = models.DecimalField(
         _("Gross Interest"),
         max_digits=12,
         decimal_places=2,
-        default_currency='UGX',
-        help_text=_("Interest before tax")
+        default=Decimal('0.00')
     )
     
-    # Tax calculation
+    # Tax
     tax_rate = models.DecimalField(
         _("Tax Rate (%)"),
         max_digits=5,
@@ -1298,26 +1225,24 @@ class InterestCalculation(BaseModel):
         default=Decimal('0.00')
     )
     
-    withholding_tax = MoneyField(
+    withholding_tax = models.DecimalField(
         _("Withholding Tax"),
         max_digits=10,
         decimal_places=2,
-        default=Money(0, 'UGX')
+        default=Decimal('0.00')
     )
     
-    net_interest = MoneyField(
+    net_interest = models.DecimalField(
         _("Net Interest"),
         max_digits=12,
         decimal_places=2,
-        default_currency='UGX',
-        help_text=_("Interest after tax deduction")
+        default=Decimal('0.00')
     )
     
     # Posting status
     is_posted = models.BooleanField(
         _("Is Posted"),
-        default=False,
-        help_text=_("Whether interest has been posted to account")
+        default=False
     )
     
     posted_date = models.DateField(
@@ -1331,53 +1256,23 @@ class InterestCalculation(BaseModel):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='interest_calculation',
-        help_text=_("Transaction created when interest was posted")
+        related_name='interest_calculation'
     )
     
-    # =============================================================================
-    # ESSENTIAL METHODS (NEEDED BY UTILS.PY)
-    # =============================================================================
+    @property
+    def currency(self):
+        """Get currency from SACCO configuration"""
+        return get_base_currency()
     
-    def post_interest(self, posted_by_user=None):
-        """Post calculated interest to accounts - NEEDED by post_calculated_interest() in utils"""
-        if self.is_posted:
-            return False, _("Interest has already been posted")
-        
-        if self.net_interest.amount <= 0:
-            return False, _("No interest to post")
-        
-        # Create interest transaction
-        interest_transaction = SavingsTransaction(
-            account=self.account,
-            transaction_type='INTEREST',
-            amount=self.net_interest,
-            tax_amount=self.withholding_tax,
-            description=f"Interest for period {self.period_start_date} to {self.period_end_date}",
-            financial_period=self.financial_period
-        )
-        
-        interest_transaction.save()
-        
-        # Create tax transaction if there's withholding tax
-        if self.withholding_tax.amount > 0:
-            tax_transaction = SavingsTransaction(
-                account=self.account,
-                transaction_type='TAX',
-                amount=self.withholding_tax,
-                description=f"Withholding tax on interest for period {self.period_start_date} to {self.period_end_date}",
-                financial_period=self.financial_period
-            )
-            tax_transaction.save()
-        
-        # Update calculation record
-        self.is_posted = True
-        self.posted_date = timezone.now().date()
-        self.transaction = interest_transaction
-        self.save()
-        
-        logger.info(f"Interest of {format_money(self.net_interest)} posted to account {self.account.account_number}")
-        return True, _("Interest posted successfully")
+    @property
+    def formatted_gross_interest(self):
+        """Get formatted gross interest"""
+        return format_money(self.gross_interest)
+    
+    @property
+    def formatted_net_interest(self):
+        """Get formatted net interest"""
+        return format_money(self.net_interest)
     
     def __str__(self):
         return f"Interest for {self.account.account_number} - {self.calculation_date}"
@@ -1393,153 +1288,12 @@ class InterestCalculation(BaseModel):
         ]
 
 
-class SavingsAccountFee(BaseModel):
-    """Fees charged on savings accounts."""
-    
-    FEE_TYPE_CHOICES = [
-        ('MAINTENANCE', _('Maintenance Fee')),
-        ('WITHDRAWAL', _('Withdrawal Fee')),
-        ('DEPOSIT', _('Deposit Fee')),
-        ('DORMANCY', _('Dormancy Fee')),
-        ('STATEMENT', _('Statement Fee')),
-        ('BELOW_MIN_BALANCE', _('Below Minimum Balance Fee')),
-        ('CHEQUE_BOOK', _('Cheque Book Fee')),
-        ('ATM_CARD', _('ATM Card Fee')),
-        ('LEDGER_FEE', _('Ledger Fee')),
-        ('SMS_ALERT', _('SMS Alert Fee')),
-        ('EARLY_WITHDRAWAL', _('Early Withdrawal Penalty')),
-        ('ACCOUNT_CLOSURE', _('Account Closure Fee')),
-        ('OTHER', _('Other Fee')),
-    ]
-    
-    account = models.ForeignKey(
-        SavingsAccount,
-        on_delete=models.CASCADE,
-        related_name='fees'
-    )
-    
-    fee_date = models.DateField(
-        _("Fee Date"),
-        default=timezone.now
-    )
-    
-    fee_type = models.CharField(
-        _("Fee Type"),
-        max_length=20,
-        choices=FEE_TYPE_CHOICES
-    )
-    
-    amount = MoneyField(
-        _("Fee Amount"),
-        max_digits=12,
-        decimal_places=2,
-        default_currency='UGX'
-    )
-    
-    description = models.TextField(
-        _("Description"),
-        null=True,
-        blank=True
-    )
-    
-    # Charging status
-    is_charged = models.BooleanField(
-        _("Is Charged"),
-        default=False,
-        help_text=_("Whether fee has been charged to account")
-    )
-    
-    charged_date = models.DateField(
-        _("Charged Date"),
-        null=True,
-        blank=True
-    )
-    
-    transaction = models.ForeignKey(
-        SavingsTransaction,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='fee_record'
-    )
-    
-    # Waiver information
-    is_waived = models.BooleanField(
-        _("Is Waived"),
-        default=False
-    )
-    
-    waiver_reason = models.TextField(
-        _("Waiver Reason"),
-        null=True,
-        blank=True
-    )
-    
-    waiver_date = models.DateTimeField(
-        _("Waiver Date"),
-        null=True,
-        blank=True
-    )
-    
-    financial_period = models.ForeignKey(
-        FinancialPeriod,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name='savings_fees'
-    )
-    
-    # =============================================================================
-    # ESSENTIAL METHODS (NEEDED BY UTILS.PY)
-    # =============================================================================
-    
-    def charge_fee(self, charged_by_user=None):
-        """Charge fee to savings account - NEEDED by charge_maintenance_fees() in utils"""
-        if self.is_charged:
-            return False, _("Fee has already been charged")
-        
-        if self.is_waived:
-            return False, _("Fee has been waived")
-        
-        if self.amount.amount <= 0:
-            return False, _("Invalid fee amount")
-        
-        # Create fee transaction
-        fee_transaction = SavingsTransaction(
-            account=self.account,
-            transaction_type='FEE',
-            amount=self.amount,
-            description=f"{self.get_fee_type_display()}: {self.description or ''}",
-            financial_period=self.financial_period
-        )
-        
-        fee_transaction.save()
-        
-        # Update fee record
-        self.is_charged = True
-        self.charged_date = timezone.now().date()
-        self.transaction = fee_transaction
-        self.save()
-        
-        logger.info(f"Fee of {format_money(self.amount)} charged to account {self.account.account_number}")
-        return True, _("Fee charged successfully")
-    
-    def __str__(self):
-        return f"{self.get_fee_type_display()} - {format_money(self.amount)} for {self.account.account_number}"
-    
-    class Meta:
-        verbose_name = _("Savings Account Fee")
-        verbose_name_plural = _("Savings Account Fees")
-        ordering = ['-fee_date']
-        indexes = [
-            models.Index(fields=['account', 'fee_date']),
-            models.Index(fields=['fee_type', 'is_charged']),
-            models.Index(fields=['financial_period']),
-        ]
-
+# =============================================================================
+# STANDING ORDERS
+# =============================================================================
 
 class StandingOrder(BaseModel):
-    """Standing orders for automated transfers."""
+    """Standing orders for automated transfers"""
     
     FREQUENCY_CHOICES = [
         ('DAILY', _('Daily')),
@@ -1547,7 +1301,6 @@ class StandingOrder(BaseModel):
         ('BIWEEKLY', _('Bi-Weekly')),
         ('MONTHLY', _('Monthly')),
         ('QUARTERLY', _('Quarterly')),
-        ('SEMI_ANNUALLY', _('Semi-Annually')),
         ('ANNUALLY', _('Annually')),
     ]
     
@@ -1560,26 +1313,12 @@ class StandingOrder(BaseModel):
         ('PENDING_APPROVAL', _('Pending Approval')),
     ]
     
-    DESTINATION_TYPE_CHOICES = [
-        ('INTERNAL_ACCOUNT', _('Internal Savings Account')),
-        ('BANK_ACCOUNT', _('Bank Account')),
-        ('MOBILE_MONEY', _('Mobile Money')),
-        ('LOAN_ACCOUNT', _('Loan Account')),
-        ('GROUP_CONTRIBUTION', _('Group Contribution')),
-        ('EXTERNAL_TRANSFER', _('External Transfer')),
-    ]
-    
     # Source and destination
     source_account = models.ForeignKey(
         SavingsAccount,
         on_delete=models.CASCADE,
-        related_name='standing_orders_out'
-    )
-    
-    destination_type = models.CharField(
-        _("Destination Type"),
-        max_length=20,
-        choices=DESTINATION_TYPE_CHOICES
+        related_name='standing_orders_out',
+        help_text=_("Account to transfer from")
     )
     
     destination_account = models.ForeignKey(
@@ -1587,23 +1326,16 @@ class StandingOrder(BaseModel):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='standing_orders_in'
-    )
-    
-    destination_reference = models.CharField(
-        _("Destination Reference"),
-        max_length=100,
-        null=True,
-        blank=True,
-        help_text=_("External account reference when destination is not internal")
+        related_name='standing_orders_in',
+        help_text=_("Account to transfer to")
     )
     
     # Transfer details
-    amount = MoneyField(
+    amount = models.DecimalField(
         _("Transfer Amount"),
         max_digits=15,
         decimal_places=2,
-        default_currency='UGX'
+        validators=[MinValueValidator(Decimal('0.01'))]
     )
     
     frequency = models.CharField(
@@ -1631,7 +1363,8 @@ class StandingOrder(BaseModel):
         _("Status"),
         max_length=20,
         choices=STATUS_CHOICES,
-        default='PENDING_APPROVAL'
+        default='PENDING_APPROVAL',
+        db_index=True
     )
     
     description = models.TextField(
@@ -1640,45 +1373,7 @@ class StandingOrder(BaseModel):
         blank=True
     )
     
-    priority = models.PositiveIntegerField(
-        _("Priority"),
-        default=1,
-        help_text=_("Execution priority when multiple orders exist")
-    )
-    
-    # Transfer handling options
-    payment_method = models.ForeignKey(
-        PaymentMethod,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name='standing_orders'
-    )
-    
-    transfer_fee = MoneyField(
-        _("Transfer Fee"),
-        max_digits=10,
-        decimal_places=2,
-        default=Money(0, 'UGX')
-    )
-    
-    skip_on_insufficient_funds = models.BooleanField(
-        _("Skip on Insufficient Funds"),
-        default=False,
-        help_text=_("Skip execution if insufficient funds, otherwise fail")
-    )
-    
-    maximum_attempts = models.PositiveIntegerField(
-        _("Maximum Attempts"),
-        default=3
-    )
-    
-    current_attempt = models.PositiveIntegerField(
-        _("Current Attempt"),
-        default=0
-    )
-    
-    # Execution statistics
+    # Execution tracking
     execution_count = models.PositiveIntegerField(
         _("Execution Count"),
         default=0
@@ -1692,121 +1387,29 @@ class StandingOrder(BaseModel):
     
     last_execution_status = models.CharField(
         _("Last Execution Status"),
-        max_length=10,
-        choices=[
-            ('SUCCESS', _('Success')),
-            ('FAILED', _('Failed')),
-            ('SKIPPED', _('Skipped')),
-            ('PENDING', _('Pending'))
-        ],
+        max_length=20,
         null=True,
         blank=True
     )
     
-    last_execution_message = models.TextField(
-        _("Last Execution Message"),
+    last_failure_reason = models.TextField(
+        _("Last Failure Reason"),
         null=True,
         blank=True
     )
     
-    # =============================================================================
-    # ESSENTIAL METHODS (NEEDED BY UTILS.PY)
-    # =============================================================================
+    @property
+    def currency(self):
+        """Get currency from SACCO configuration"""
+        return get_base_currency()
     
-    def execute_transfer(self, execution_user=None):
-        """Execute the standing order transfer - NEEDED by process_due_standing_orders() in utils"""
-        if self.status != 'ACTIVE':
-            return False, f"Standing order status is {self.get_status_display()}"
-        
-        # Check if source account has sufficient funds
-        total_amount = self.amount + self.transfer_fee
-        can_withdraw, message = self.source_account.is_withdrawal_allowed(total_amount)
-        
-        if not can_withdraw:
-            if self.skip_on_insufficient_funds:
-                self.last_execution_status = 'SKIPPED'
-                self.last_execution_message = f"Skipped: {message}"
-                self.last_execution_date = timezone.now().date()
-                self.next_run_date = self.calculate_next_run_date()
-                self.save()
-                return True, f"Transfer skipped: {message}"
-            else:
-                self.current_attempt += 1
-                self.last_execution_status = 'FAILED'
-                self.last_execution_message = f"Failed: {message}"
-                
-                if self.current_attempt >= self.maximum_attempts:
-                    self.status = 'FAILED'
-                
-                self.save()
-                return False, f"Transfer failed: {message}"
-        
-        try:
-            # Create withdrawal transaction
-            withdrawal_transaction = SavingsTransaction(
-                account=self.source_account,
-                transaction_type='TRANSFER_OUT',
-                amount=self.amount,
-                fees=self.transfer_fee,
-                payment_method=self.payment_method,
-                linked_account=self.destination_account,
-                description=f"Standing order transfer: {self.description or ''}",
-                reference_number=f"SO-{self.id}-{timezone.now().strftime('%Y%m%d')}"
-            )
-            
-            withdrawal_transaction.save()
-            
-            # Create deposit transaction if internal transfer
-            if self.destination_type == 'INTERNAL_ACCOUNT' and self.destination_account:
-                deposit_transaction = SavingsTransaction(
-                    account=self.destination_account,
-                    transaction_type='TRANSFER_IN',
-                    amount=self.amount,
-                    payment_method=self.payment_method,
-                    linked_account=self.source_account,
-                    linked_transaction=withdrawal_transaction,
-                    description=f"Standing order transfer from {self.source_account.account_number}",
-                    reference_number=withdrawal_transaction.reference_number
-                )
-                
-                deposit_transaction.save()
-                
-                # Link transactions
-                withdrawal_transaction.linked_transaction = deposit_transaction
-                withdrawal_transaction.save()
-            
-            # Update standing order status
-            self.execution_count += 1
-            self.current_attempt = 0  # Reset attempts on success
-            self.last_execution_date = timezone.now().date()
-            self.last_execution_status = 'SUCCESS'
-            self.last_execution_message = 'Transfer executed successfully'
-            self.next_run_date = self.calculate_next_run_date()
-            
-            # Check if we've reached the end date
-            if self.end_date and self.next_run_date > self.end_date:
-                self.status = 'COMPLETED'
-            
-            self.save()
-            
-            logger.info(f"Standing order {self.id} executed successfully")
-            return True, "Transfer executed successfully"
-            
-        except Exception as e:
-            # Handle execution error
-            self.current_attempt += 1
-            self.last_execution_status = 'FAILED'
-            self.last_execution_message = f"Error: {str(e)}"
-            
-            if self.current_attempt >= self.maximum_attempts:
-                self.status = 'FAILED'
-            
-            self.save()
-            logger.error(f"Standing order {self.id} execution failed: {e}")
-            return False, f"Transfer failed: {str(e)}"
+    @property
+    def formatted_amount(self):
+        """Get formatted transfer amount"""
+        return format_money(self.amount)
     
     def calculate_next_run_date(self):
-        """Calculate the next run date based on frequency - NEEDED by execute_transfer()"""
+        """Calculate the next run date based on frequency"""
         if not self.last_execution_date:
             return self.start_date
         
@@ -1822,8 +1425,6 @@ class StandingOrder(BaseModel):
             return last_date + relativedelta(months=1)
         elif self.frequency == 'QUARTERLY':
             return last_date + relativedelta(months=3)
-        elif self.frequency == 'SEMI_ANNUALLY':
-            return last_date + relativedelta(months=6)
         elif self.frequency == 'ANNUALLY':
             return last_date + relativedelta(years=1)
         
@@ -1838,7 +1439,40 @@ class StandingOrder(BaseModel):
         return cls.objects.filter(
             status='ACTIVE',
             next_run_date__lte=execution_date
-        ).order_by('priority', 'next_run_date')
+        ).order_by('next_run_date')
+    
+    def activate(self):
+        """Activate standing order"""
+        if self.status != 'PENDING_APPROVAL':
+            return False, _("Only pending orders can be activated")
+        
+        self.status = 'ACTIVE'
+        self.save()
+        
+        logger.info(f"Standing order activated: {self}")
+        return True, _("Standing order activated")
+    
+    def pause(self):
+        """Pause standing order"""
+        if self.status != 'ACTIVE':
+            return False, _("Only active orders can be paused")
+        
+        self.status = 'PAUSED'
+        self.save()
+        
+        logger.info(f"Standing order paused: {self}")
+        return True, _("Standing order paused")
+    
+    def resume(self):
+        """Resume paused standing order"""
+        if self.status != 'PAUSED':
+            return False, _("Only paused orders can be resumed")
+        
+        self.status = 'ACTIVE'
+        self.save()
+        
+        logger.info(f"Standing order resumed: {self}")
+        return True, _("Standing order resumed")
     
     def __str__(self):
         return f"Standing Order: {self.source_account.account_number} -> {format_money(self.amount)} {self.get_frequency_display()}"
@@ -1846,882 +1480,39 @@ class StandingOrder(BaseModel):
     class Meta:
         verbose_name = _("Standing Order")
         verbose_name_plural = _("Standing Orders")
-        ordering = ['priority', 'next_run_date']
+        ordering = ['next_run_date']
         indexes = [
             models.Index(fields=['status', 'next_run_date']),
             models.Index(fields=['source_account', 'status']),
-            models.Index(fields=['priority']),
         ]
 
 
 # =============================================================================
-# REMAINING MODELS (Simplified - keep only essential fields and methods)
+# SAVINGS GOALS
 # =============================================================================
-          
-class SavingsAccountStatement(BaseModel):
-    """Generated account statements."""
-    
-    STATEMENT_TYPE_CHOICES = [
-        ('MONTHLY', _('Monthly Statement')),
-        ('QUARTERLY', _('Quarterly Statement')),
-        ('ANNUAL', _('Annual Statement')),
-        ('CUSTOM', _('Custom Period Statement')),
-        ('ON_DEMAND', _('On-Demand Statement')),
-    ]
-    
-    account = models.ForeignKey(
-        SavingsAccount,
-        on_delete=models.CASCADE,
-        related_name='statements'
-    )
-    
-    statement_type = models.CharField(
-        _("Statement Type"),
-        max_length=15,
-        choices=STATEMENT_TYPE_CHOICES,
-        default='MONTHLY'
-    )
-    
-    statement_date = models.DateField(
-        _("Statement Date"),
-        help_text=_("Date when statement was generated")
-    )
-    
-    period_start_date = models.DateField(
-        _("Period Start Date")
-    )
-    
-    period_end_date = models.DateField(
-        _("Period End Date")
-    )
-    
-    financial_period = models.ForeignKey(
-        FinancialPeriod,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='savings_statements'
-    )
-    
-    # Balance information
-    opening_balance = MoneyField(
-        _("Opening Balance"),
-        max_digits=15,
-        decimal_places=2,
-        default_currency='UGX'
-    )
-    
-    closing_balance = MoneyField(
-        _("Closing Balance"),
-        max_digits=15,
-        decimal_places=2,
-        default_currency='UGX'
-    )
-    
-    # Transaction summaries
-    total_deposits = MoneyField(
-        _("Total Deposits"),
-        max_digits=15,
-        decimal_places=2,
-        default_currency='UGX'
-    )
-    
-    total_withdrawals = MoneyField(
-        _("Total Withdrawals"),
-        max_digits=15,
-        decimal_places=2,
-        default_currency='UGX'
-    )
-    
-    total_fees = MoneyField(
-        _("Total Fees"),
-        max_digits=12,
-        decimal_places=2,
-        default_currency='UGX'
-    )
-    
-    total_interest = MoneyField(
-        _("Total Interest"),
-        max_digits=12,
-        decimal_places=2,
-        default_currency='UGX'
-    )
-    
-    total_taxes = MoneyField(
-        _("Total Taxes"),
-        max_digits=12,
-        decimal_places=2,
-        default_currency='UGX'
-    )
-    
-    transaction_count = models.PositiveIntegerField(
-        _("Transaction Count"),
-        default=0
-    )
-    
-    # File and delivery
-    statement_file = models.FileField(
-        _("Statement File"),
-        upload_to='account_statements/',
-        null=True,
-        blank=True
-    )
-    
-    is_delivered = models.BooleanField(
-        _("Is Delivered"),
-        default=False
-    )
-    
-    delivery_date = models.DateTimeField(
-        _("Delivery Date"),
-        null=True,
-        blank=True
-    )
-    
-    def __str__(self):
-        return f"Statement for {self.account.account_number} - {self.period_start_date} to {self.period_end_date}"
-    
-    class Meta:
-        verbose_name = _("Savings Account Statement")
-        verbose_name_plural = _("Savings Account Statements")
-        ordering = ['-statement_date']
-
-
-class SavingsAccountClosure(BaseModel):
-    """Record of closed savings accounts."""
-    
-    CLOSURE_REASON_CHOICES = [
-        ('MEMBER_REQUEST', _('Member Request')),
-        ('TRANSFER', _('Transfer to Another Account')),
-        ('DORMANCY', _('Long-term Dormancy')),
-        ('DEATH', _('Death of Member')),
-        ('FRAUD', _('Fraud/Compliance')),
-        ('REGULATORY', _('Regulatory Requirement')),
-        ('SYSTEM', _('System Closure')),
-        ('MIGRATION', _('System Migration')),
-        ('OTHER', _('Other Reason')),
-    ]
-    
-    account = models.OneToOneField(
-        SavingsAccount,
-        on_delete=models.CASCADE,
-        related_name='closure_record'
-    )
-    
-    closure_date = models.DateField(
-        _("Closure Date")
-    )
-    
-    # Balance information at closure
-    closing_balance = MoneyField(
-        _("Closing Balance"),
-        max_digits=15,
-        decimal_places=2,
-        default_currency='UGX'
-    )
-    
-    net_amount = MoneyField(
-        _("Net Amount"),
-        max_digits=15,
-        decimal_places=2,
-        default_currency='UGX'
-    )
-    
-    reason = models.CharField(
-        _("Closure Reason"),
-        max_length=20,
-        choices=CLOSURE_REASON_CHOICES
-    )
-    
-    details = models.TextField(
-        _("Closure Details"),
-        null=True,
-        blank=True
-    )
-    
-    # Related transactions
-    closure_transaction = models.ForeignKey(
-        SavingsTransaction,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='account_closure'
-    )
-    
-    financial_period = models.ForeignKey(
-        FinancialPeriod,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name='account_closures'
-    )
-    
-    def __str__(self):
-        return f"Closure of {self.account.account_number} on {self.closure_date}"
-    
-    class Meta:
-        verbose_name = _("Savings Account Closure")
-        verbose_name_plural = _("Savings Account Closures")
-        ordering = ['-closure_date']
-
-
-class DepositMaturity(BaseModel):
-    """Maturity handling for fixed deposits."""
-    
-    DISPOSITION_CHOICES = [
-        ('PENDING', _('Pending')),
-        ('RENEWED', _('Renewed')),
-        ('TRANSFERRED', _('Transferred to Savings')),
-        ('WITHDRAWN', _('Withdrawn')),
-        ('PARTIAL_RENEWAL', _('Partially Renewed')),
-        ('AUTO_RENEWED', _('Auto Renewed')),
-    ]
-    
-    account = models.ForeignKey(
-        SavingsAccount,
-        on_delete=models.CASCADE,
-        related_name='maturity_records'
-    )
-    
-    maturity_date = models.DateField(
-        _("Maturity Date")
-    )
-    
-    # Maturity amounts
-    principal_amount = MoneyField(
-        _("Principal Amount"),
-        max_digits=15,
-        decimal_places=2,
-        default_currency='UGX'
-    )
-    
-    interest_amount = MoneyField(
-        _("Interest Amount"),
-        max_digits=12,
-        decimal_places=2,
-        default_currency='UGX'
-    )
-    
-    maturity_amount = MoneyField(
-        _("Net Maturity Amount"),
-        max_digits=15,
-        decimal_places=2,
-        default_currency='UGX'
-    )
-    
-    # Disposition details
-    disposition = models.CharField(
-        _("Disposition"),
-        max_length=20,
-        choices=DISPOSITION_CHOICES,
-        default='PENDING'
-    )
-    
-    disposition_date = models.DateField(
-        _("Disposition Date"),
-        null=True,
-        blank=True
-    )
-    
-    # Processing status
-    is_processed = models.BooleanField(
-        _("Is Processed"),
-        default=False
-    )
-    
-    financial_period = models.ForeignKey(
-        FinancialPeriod,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name='deposit_maturities'
-    )
-    
-    def __str__(self):
-        return f"Maturity for {self.account.account_number} on {self.maturity_date}"
-    
-    class Meta:
-        verbose_name = _("Deposit Maturity")
-        verbose_name_plural = _("Deposit Maturities")
-        ordering = ['maturity_date']
-
-
-class SavingsHold(BaseModel):
-    """Holds placed on savings accounts."""
-    
-    HOLD_REASON_CHOICES = [
-        ('LOAN_COLLATERAL', _('Loan Collateral')),
-        ('LEGAL_HOLD', _('Legal Hold')),
-        ('CHECK_CLEARING', _('Check Clearing')),
-        ('PENDING_TRANSFER', _('Pending Transfer')),
-        ('DISPUTE', _('Account Dispute')),
-        ('DORMANCY', _('Dormancy Hold')),
-        ('REGULATORY', _('Regulatory Hold')),
-        ('FRAUD_INVESTIGATION', _('Fraud Investigation')),
-        ('COURT_ORDER', _('Court Order')),
-        ('OTHER', _('Other')),
-    ]
-    
-    account = models.ForeignKey(
-        SavingsAccount,
-        on_delete=models.CASCADE,
-        related_name='holds'
-    )
-    
-    hold_date = models.DateField(
-        _("Hold Date"),
-        default=timezone.now
-    )
-    
-    release_date = models.DateField(
-        _("Release Date"),
-        null=True,
-        blank=True
-    )
-    
-    amount = MoneyField(
-        _("Hold Amount"),
-        max_digits=15,
-        decimal_places=2,
-        default_currency='UGX'
-    )
-    
-    is_active = models.BooleanField(
-        _("Is Active"),
-        default=True
-    )
-    
-    reason = models.CharField(
-        _("Hold Reason"),
-        max_length=25,
-        choices=HOLD_REASON_CHOICES
-    )
-    
-    description = models.TextField(
-        _("Description"),
-        null=True,
-        blank=True
-    )
-    
-    # Expiry for temporary holds
-    expiry_date = models.DateField(
-        _("Expiry Date"),
-        null=True,
-        blank=True,
-        help_text=_("Date when hold automatically expires")
-    )
-    
-    financial_period = models.ForeignKey(
-        FinancialPeriod,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name='savings_holds'
-    )
-    
-    @classmethod
-    def check_expired_holds(cls):
-        """Check for and auto-release expired holds"""
-        today = timezone.now().date()
-        expired_holds = cls.objects.filter(
-            is_active=True,
-            expiry_date__lt=today
-        )
-        
-        released_count = 0
-        for hold in expired_holds:
-            hold.is_active = False
-            hold.release_date = today
-            hold.save()
-            released_count += 1
-        
-        return released_count
-    
-    def __str__(self):
-        return f"Hold of {format_money(self.amount)} on {self.account.account_number} - {self.get_reason_display()}"
-    
-    class Meta:
-        verbose_name = _("Savings Hold")
-        verbose_name_plural = _("Savings Holds")
-        ordering = ['-hold_date']
-
-
-class MinimumBalanceAlert(BaseModel):
-    """Alerts for accounts below minimum balance."""
-    
-    NOTIFICATION_METHOD_CHOICES = [
-        ('SMS', _('SMS')),
-        ('EMAIL', _('Email')),
-        ('BOTH', _('Both SMS and Email')),
-        ('NONE', _('No Notification')),
-    ]
-    
-    account = models.ForeignKey(
-        SavingsAccount,
-        on_delete=models.CASCADE,
-        related_name='minimum_balance_alerts'
-    )
-    
-    alert_date = models.DateField(
-        _("Alert Date"),
-        default=timezone.now
-    )
-    
-    current_balance = MoneyField(
-        _("Current Balance"),
-        max_digits=15,
-        decimal_places=2,
-        default_currency='UGX'
-    )
-    
-    minimum_required = MoneyField(
-        _("Minimum Required"),
-        max_digits=15,
-        decimal_places=2,
-        default_currency='UGX'
-    )
-    
-    shortfall = MoneyField(
-        _("Shortfall Amount"),
-        max_digits=15,
-        decimal_places=2,
-        default_currency='UGX'
-    )
-    
-    # Alert status
-    is_resolved = models.BooleanField(
-        _("Is Resolved"),
-        default=False
-    )
-    
-    resolved_date = models.DateField(
-        _("Resolved Date"),
-        null=True,
-        blank=True
-    )
-    
-    # Notification tracking
-    notification_sent = models.BooleanField(
-        _("Notification Sent"),
-        default=False
-    )
-    
-    notification_date = models.DateTimeField(
-        _("Notification Date"),
-        null=True,
-        blank=True
-    )
-    
-    notification_method = models.CharField(
-        _("Notification Method"),
-        max_length=10,
-        choices=NOTIFICATION_METHOD_CHOICES,
-        default='NONE'
-    )
-    
-    notification_count = models.PositiveIntegerField(
-        _("Notification Count"),
-        default=0,
-        help_text=_("Number of notifications sent")
-    )
-    
-    financial_period = models.ForeignKey(
-        FinancialPeriod,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name='balance_alerts'
-    )
-    
-    # =============================================================================
-    # ESSENTIAL METHODS (NEEDED BY SIGNALS)
-    # =============================================================================
-    
-    def send_notification(self, method='SMS', sent_by_user=None):
-        """Send notification to member - NEEDED by signals"""
-        try:
-            config = get_sacco_config()
-            
-            if method in ['SMS', 'BOTH'] and config.enable_sms_notifications:
-                # Send SMS notification
-                self._send_sms_notification()
-            
-            if method in ['EMAIL', 'BOTH'] and config.enable_email_notifications:
-                # Send email notification
-                self._send_email_notification()
-            
-            self.notification_sent = True
-            self.notification_date = timezone.now()
-            self.notification_method = method
-            self.notification_count += 1
-            
-            self.save()
-            
-            logger.info(f"Minimum balance alert sent to {self.account.member.full_name}")
-            return True, _("Notification sent successfully")
-            
-        except Exception as e:
-            logger.error(f"Failed to send minimum balance alert: {e}")
-            return False, f"Failed to send notification: {str(e)}"
-    
-    def _send_sms_notification(self):
-        """Send SMS notification"""
-        message = (
-            f"Dear {self.account.member.first_name}, your savings account "
-            f"{self.account.account_number} balance is {format_money(self.current_balance)}. "
-            f"Minimum balance required is {format_money(self.minimum_required)}. "
-            f"Please top up by {format_money(self.shortfall)}."
-        )
-        
-        # Integration with SMS service would go here
-        logger.info(f"SMS sent: {message}")
-
-    def _send_email_notification(self):
-        """Send email notification"""
-        subject = "Minimum Balance Alert"
-        message = (
-            f"Dear {self.account.member.full_name},\n\n"
-            f"Your savings account {self.account.account_number} has fallen below "
-            f"the minimum balance requirement.\n\n"
-            f"Current Balance: {format_money(self.current_balance)}\n"
-            f"Minimum Required: {format_money(self.minimum_required)}\n"
-            f"Shortfall: {format_money(self.shortfall)}\n\n"
-            f"Please deposit the shortfall amount to avoid fees."
-        )
-        
-        # Integration with email service would go here
-        logger.info(f"Email sent: {subject}")
-    
-    @classmethod
-    def check_minimum_balances(cls):
-        """Check all accounts for minimum balance violations"""
-        alerts_created = 0
-        
-        active_accounts = SavingsAccount.objects.filter(status='ACTIVE')
-        
-        for account in active_accounts:
-            min_balance = account.savings_product.minimum_balance
-            
-            if account.current_balance < min_balance:
-                existing_alert = cls.objects.filter(
-                    account=account,
-                    alert_date=timezone.now().date(),
-                    is_resolved=False
-                ).exists()
-                
-                if not existing_alert:
-                    cls.objects.create(
-                        account=account,
-                        current_balance=account.current_balance,
-                        minimum_required=min_balance
-                    )
-                    alerts_created += 1
-        
-        return alerts_created
-    
-    def __str__(self):
-        return f"Minimum Balance Alert for {self.account.account_number} on {self.alert_date}"
-    
-    class Meta:
-        verbose_name = _("Minimum Balance Alert")
-        verbose_name_plural = _("Minimum Balance Alerts")
-        ordering = ['-alert_date']
-
-
-class TransactionReceipt(BaseModel):
-    """Receipts for savings transactions."""
-    
-    transaction = models.OneToOneField(
-        SavingsTransaction,
-        on_delete=models.CASCADE,
-        related_name='receipt'
-    )
-    
-    receipt_number = models.CharField(
-        _("Receipt Number"),
-        max_length=50,
-        unique=True
-    )
-    
-    receipt_date = models.DateTimeField(
-        _("Receipt Date"),
-        default=timezone.now
-    )
-    
-    # Transaction details snapshot
-    member_name = models.CharField(
-        _("Member Name"),
-        max_length=200
-    )
-    
-    account_number = models.CharField(
-        _("Account Number"),
-        max_length=30
-    )
-    
-    transaction_type = models.CharField(
-        _("Transaction Type"),
-        max_length=20
-    )
-    
-    amount = MoneyField(
-        _("Transaction Amount"),
-        max_digits=15,
-        decimal_places=2,
-        default_currency='UGX'
-    )
-    
-    total_amount = MoneyField(
-        _("Total Amount"),
-        max_digits=15,
-        decimal_places=2,
-        default_currency='UGX'
-    )
-    
-    running_balance = MoneyField(
-        _("Running Balance"),
-        max_digits=15,
-        decimal_places=2,
-        default_currency='UGX'
-    )
-    
-    # Receipt handling
-    is_printed = models.BooleanField(
-        _("Is Printed"),
-        default=False
-    )
-    
-    print_date = models.DateTimeField(
-        _("Print Date"),
-        null=True,
-        blank=True
-    )
-    
-    def __str__(self):
-        return f"Receipt #{self.receipt_number} for {self.transaction_type}"
-    
-    class Meta:
-        verbose_name = _("Transaction Receipt")
-        verbose_name_plural = _("Transaction Receipts")
-        ordering = ['-receipt_date']
-
-
-class GroupSavings(BaseModel):
-    """Group savings contribution tracking."""
-    
-    CONTRIBUTION_CYCLE_CHOICES = [
-        ('DAILY', _('Daily')),
-        ('WEEKLY', _('Weekly')),
-        ('BIWEEKLY', _('Bi-Weekly')),
-        ('MONTHLY', _('Monthly')),
-        ('QUARTERLY', _('Quarterly')),
-    ]
-    
-    group = models.ForeignKey(
-        MemberGroup,
-        on_delete=models.CASCADE,
-        related_name='savings_contributions'
-    )
-    
-    group_account = models.ForeignKey(
-        SavingsAccount,
-        on_delete=models.CASCADE,
-        related_name='group_contributions'
-    )
-    
-    contribution_date = models.DateField(
-        _("Contribution Date"),
-        default=timezone.now
-    )
-    
-    total_contribution = MoneyField(
-        _("Total Contribution"),
-        max_digits=15,
-        decimal_places=2,
-        default_currency='UGX'
-    )
-    
-    contribution_cycle = models.CharField(
-        _("Contribution Cycle"),
-        max_length=15,
-        choices=CONTRIBUTION_CYCLE_CHOICES
-    )
-    
-    # Meeting information
-    is_complete = models.BooleanField(
-        _("Is Complete"),
-        default=False
-    )
-    
-    members_present = models.PositiveIntegerField(
-        _("Members Present"),
-        default=0
-    )
-    
-    members_absent = models.PositiveIntegerField(
-        _("Members Absent"),
-        default=0
-    )
-    
-    financial_period = models.ForeignKey(
-        FinancialPeriod,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name='group_savings'
-    )
-    
-    def __str__(self):
-        return f"Group Contribution for {self.group.name} on {self.contribution_date}"
-    
-    class Meta:
-        verbose_name = _("Group Savings")
-        verbose_name_plural = _("Group Savings")
-        ordering = ['-contribution_date']
-        unique_together = ('group', 'contribution_date')
-
-
-class GroupSavingsContribution(BaseModel):
-    """Individual member contributions to group savings."""
-    
-    CONTRIBUTION_METHOD_CHOICES = [
-        ('CASH', _('Cash')),
-        ('TRANSFER', _('Account Transfer')),
-        ('MOBILE_MONEY', _('Mobile Money')),
-        ('BANK_TRANSFER', _('Bank Transfer')),
-        ('CHEQUE', _('Cheque')),
-        ('DEDUCTION', _('Salary Deduction')),
-    ]
-    
-    group_savings = models.ForeignKey(
-        GroupSavings,
-        on_delete=models.CASCADE,
-        related_name='member_contributions'
-    )
-    
-    member = models.ForeignKey(
-        Member,
-        on_delete=models.CASCADE,
-        related_name='group_contributions'
-    )
-    
-    # Contribution amounts
-    contribution_amount = MoneyField(
-        _("Contribution Amount"),
-        max_digits=12,
-        decimal_places=2,
-        default_currency='UGX'
-    )
-    
-    expected_amount = MoneyField(
-        _("Expected Amount"),
-        max_digits=12,
-        decimal_places=2,
-        default_currency='UGX'
-    )
-    
-    variance = MoneyField(
-        _("Variance"),
-        max_digits=12,
-        decimal_places=2,
-        default_currency='UGX'
-    )
-    
-    # Attendance and method
-    is_present = models.BooleanField(
-        _("Is Present"),
-        default=True
-    )
-    
-    contribution_method = models.CharField(
-        _("Contribution Method"),
-        max_length=15,
-        choices=CONTRIBUTION_METHOD_CHOICES,
-        default='CASH'
-    )
-    
-    receipt_number = models.CharField(
-        _("Receipt Number"),
-        max_length=50,
-        null=True,
-        blank=True
-    )
-    
-    # Related transaction
-    transaction = models.ForeignKey(
-        SavingsTransaction,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='group_contribution'
-    )
-    
-    # =============================================================================
-    # ESSENTIAL METHODS (NEEDED BY SIGNALS)
-    # =============================================================================
-    
-    def create_savings_transaction(self, processed_by_user=None):
-        """Create corresponding savings transaction - NEEDED by signals"""
-        if self.transaction or self.contribution_amount.amount <= 0:
-            return None
-        
-        transaction = SavingsTransaction(
-            account=self.group_savings.group_account,
-            transaction_type='DEPOSIT',
-            amount=self.contribution_amount,
-            description=f"Group contribution by {self.member.full_name}",
-            reference_number=self.receipt_number,
-            financial_period=self.group_savings.financial_period
-        )
-        
-        transaction.save()
-        
-        self.transaction = transaction
-        self.save(update_fields=['transaction'])
-        
-        return transaction
-    
-    def __str__(self):
-        return f"Contribution of {format_money(self.contribution_amount)} by {self.member.full_name}"
-    
-    class Meta:
-        verbose_name = _("Group Savings Contribution")
-        verbose_name_plural = _("Group Savings Contributions")
-        unique_together = ('group_savings', 'member')
-
 
 class SavingsGoal(BaseModel):
-    """Savings goals for members."""
+    """Savings goals for members"""
     
     GOAL_TYPE_CHOICES = [
         ('EDUCATION', _('Education')),
         ('HOUSING', _('Housing/Property')),
-        ('VEHICLE', _('Vehicle')),
         ('BUSINESS', _('Business')),
         ('EMERGENCY', _('Emergency Fund')),
         ('RETIREMENT', _('Retirement')),
-        ('VACATION', _('Vacation')),
+        ('TRAVEL', _('Travel')),
         ('WEDDING', _('Wedding')),
-        ('MEDICAL', _('Medical Expenses')),
-        ('FARMING', _('Farming/Agriculture')),
+        ('VEHICLE', _('Vehicle Purchase')),
         ('OTHER', _('Other')),
-    ]
-    
-    FREQUENCY_CHOICES = [
-        ('DAILY', _('Daily')),
-        ('WEEKLY', _('Weekly')),
-        ('BIWEEKLY', _('Bi-Weekly')),
-        ('MONTHLY', _('Monthly')),
-        ('QUARTERLY', _('Quarterly')),
     ]
     
     account = models.ForeignKey(
         SavingsAccount,
         on_delete=models.CASCADE,
-        related_name='savings_goals'
+        related_name='savings_goals',
+        help_text=_("Savings account linked to this goal")
     )
     
-    # Goal details
     name = models.CharField(
         _("Goal Name"),
         max_length=100
@@ -2739,19 +1530,18 @@ class SavingsGoal(BaseModel):
         choices=GOAL_TYPE_CHOICES
     )
     
-    # Target information
-    target_amount = MoneyField(
+    target_amount = models.DecimalField(
         _("Target Amount"),
         max_digits=15,
         decimal_places=2,
-        default_currency='UGX'
+        validators=[MinValueValidator(Decimal('0.01'))]
     )
     
-    current_amount = MoneyField(
+    current_amount = models.DecimalField(
         _("Current Amount"),
         max_digits=15,
         decimal_places=2,
-        default=Money(0, 'UGX')
+        default=Decimal('0.00')
     )
     
     start_date = models.DateField(
@@ -2763,7 +1553,6 @@ class SavingsGoal(BaseModel):
         _("Target Date")
     )
     
-    # Achievement tracking
     is_achieved = models.BooleanField(
         _("Is Achieved"),
         default=False
@@ -2782,85 +1571,68 @@ class SavingsGoal(BaseModel):
         default=Decimal('0.00')
     )
     
-    # Contribution settings
-    contribution_frequency = models.CharField(
-        _("Contribution Frequency"),
-        max_length=15,
-        choices=FREQUENCY_CHOICES,
-        default='MONTHLY'
-    )
+    @property
+    def currency(self):
+        """Get currency from SACCO configuration"""
+        return get_base_currency()
     
-    recommended_contribution = MoneyField(
-        _("Recommended Contribution"),
-        max_digits=12,
-        decimal_places=2,
-        default_currency='UGX'
-    )
+    @property
+    def formatted_target_amount(self):
+        """Get formatted target amount"""
+        return format_money(self.target_amount)
     
-    # Auto-contribution
-    enable_auto_contribution = models.BooleanField(
-        _("Enable Auto Contribution"),
-        default=False
-    )
+    @property
+    def formatted_current_amount(self):
+        """Get formatted current amount"""
+        return format_money(self.current_amount)
     
-    auto_contribution_amount = MoneyField(
-        _("Auto Contribution Amount"),
-        max_digits=12,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        default_currency='UGX'
-    )
+    @property
+    def remaining_amount(self):
+        """Get remaining amount to reach goal"""
+        return max(self.target_amount - self.current_amount, Decimal('0.00'))
     
-    auto_contribution_source = models.ForeignKey(
-        SavingsAccount,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='auto_contribution_goals'
-    )
+    @property
+    def formatted_remaining_amount(self):
+        """Get formatted remaining amount"""
+        return format_money(self.remaining_amount)
     
-    # Progress tracking
-    last_contribution_date = models.DateField(
-        _("Last Contribution Date"),
-        null=True,
-        blank=True
-    )
-    
-    last_contribution_amount = MoneyField(
-        _("Last Contribution Amount"),
-        max_digits=12,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        default_currency='UGX'
-    )
-    
-    total_contributions = models.PositiveIntegerField(
-        _("Total Contributions"),
-        default=0
-    )
-    
-    # =============================================================================
-    # ESSENTIAL METHODS (NEEDED BY SIGNALS)
-    # =============================================================================
-    
-    def add_contribution(self, amount, contribution_date=None):
-        """Add a contribution to the goal - NEEDED by SavingsGoalService in signals"""
-        if contribution_date is None:
-            contribution_date = timezone.now().date()
+    @property
+    def days_remaining(self):
+        """Get days remaining to target date"""
+        if self.is_achieved:
+            return 0
         
-        if not isinstance(amount, Money):
-            amount = Money(amount, self.account.currency)
+        today = timezone.now().date()
+        if today >= self.target_date:
+            return 0
         
-        self.current_amount += amount
-        self.last_contribution_date = contribution_date
-        self.last_contribution_amount = amount
-        self.total_contributions += 1
+        return (self.target_date - today).days
+    
+    def update_progress(self):
+        """Update progress percentage"""
+        if self.target_amount > 0:
+            self.progress_percentage = (self.current_amount / self.target_amount) * 100
+            
+            # Check if goal is achieved
+            if self.progress_percentage >= 100 and not self.is_achieved:
+                self.is_achieved = True
+                self.achievement_date = timezone.now().date()
+        else:
+            self.progress_percentage = Decimal('0.00')
         
         self.save()
+    
+    def clean(self):
+        """Validate goal"""
+        super().clean()
+        errors = {}
         
-        logger.info(f"Contribution of {format_money(amount)} added to goal {self.name}")
+        if self.target_date and self.start_date:
+            if self.target_date <= self.start_date:
+                errors['target_date'] = _("Target date must be after start date")
+        
+        if errors:
+            raise ValidationError(errors)
     
     def __str__(self):
         return f"{self.name} - {format_money(self.current_amount)}/{format_money(self.target_amount)} ({self.progress_percentage:.1f}%)"
@@ -2869,226 +1641,7 @@ class SavingsGoal(BaseModel):
         verbose_name = _("Savings Goal")
         verbose_name_plural = _("Savings Goals")
         ordering = ['target_date']
-
-
-class SavingsTransactionLimit(BaseModel):
-    """Transaction limits for savings accounts and products."""
-    
-    LIMIT_TYPE_CHOICES = [
-        ('WITHDRAWAL_DAILY', _('Daily Withdrawal')),
-        ('WITHDRAWAL_WEEKLY', _('Weekly Withdrawal')),
-        ('WITHDRAWAL_MONTHLY', _('Monthly Withdrawal')),
-        ('DEPOSIT_DAILY', _('Daily Deposit')),
-        ('DEPOSIT_WEEKLY', _('Weekly Deposit')),
-        ('DEPOSIT_MONTHLY', _('Monthly Deposit')),
-        ('TRANSFER_DAILY', _('Daily Transfer')),
-        ('TRANSFER_WEEKLY', _('Weekly Transfer')),
-        ('TRANSFER_MONTHLY', _('Monthly Transfer')),
-        ('TRANSACTION_DAILY', _('Daily Transaction Count')),
-        ('TRANSACTION_WEEKLY', _('Weekly Transaction Count')),
-        ('TRANSACTION_MONTHLY', _('Monthly Transaction Count')),
-    ]
-    
-    SCOPE_CHOICES = [
-        ('PRODUCT', _('Product Level')),
-        ('ACCOUNT', _('Account Level')),
-        ('MEMBER', _('Member Level')),
-    ]
-    
-    # Scope definition
-    scope = models.CharField(
-        _("Scope"),
-        max_length=10,
-        choices=SCOPE_CHOICES,
-        default='PRODUCT'
-    )
-    
-    savings_product = models.ForeignKey(
-        SavingsProduct,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name='transaction_limits'
-    )
-    
-    account = models.ForeignKey(
-        SavingsAccount,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name='transaction_limits'
-    )
-    
-    member = models.ForeignKey(
-        Member,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name='savings_transaction_limits'
-    )
-    
-    # Limit definition
-    limit_type = models.CharField(
-        _("Limit Type"),
-        max_length=25,
-        choices=LIMIT_TYPE_CHOICES
-    )
-    
-    transaction_count_limit = models.PositiveIntegerField(
-        _("Transaction Count Limit"),
-        null=True,
-        blank=True,
-        help_text=_("Maximum number of transactions")
-    )
-    
-    amount_limit = MoneyField(
-        _("Amount Limit"),
-        max_digits=15,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        default_currency='UGX',
-        help_text=_("Maximum amount per period")
-    )
-    
-    # Effective period
-    effective_from = models.DateField(
-        _("Effective From"),
-        default=timezone.now
-    )
-    
-    effective_to = models.DateField(
-        _("Effective To"),
-        null=True,
-        blank=True,
-        help_text=_("Leave blank for permanent limit")
-    )
-    
-    is_active = models.BooleanField(
-        _("Is Active"),
-        default=True
-    )
-    
-    # Override settings
-    is_hard_limit = models.BooleanField(
-        _("Is Hard Limit"),
-        default=True,
-        help_text=_("Whether limit can be overridden with approval")
-    )
-    
-    def __str__(self):
-        scope_name = self.get_scope_display()
-        if self.scope == 'PRODUCT':
-            scope_detail = self.savings_product.name if self.savings_product else "Unknown"
-        elif self.scope == 'ACCOUNT':
-            scope_detail = self.account.account_number if self.account else "Unknown"
-        elif self.scope == 'MEMBER':
-            scope_detail = self.member.full_name if self.member else "Unknown"
-        else:
-            scope_detail = "Unknown"
-        
-        return f"{self.get_limit_type_display()} - {scope_name}: {scope_detail}"
-    
-    class Meta:
-        verbose_name = _("Savings Transaction Limit")
-        verbose_name_plural = _("Savings Transaction Limits")
-        unique_together = (
-            ('scope', 'savings_product', 'limit_type'),
-            ('scope', 'account', 'limit_type'),
-            ('scope', 'member', 'limit_type'),
-        )
-
-
-class SavingsInterestTier(BaseModel):
-    """Custom interest rate tiers for individual accounts."""
-    
-    account = models.ForeignKey(
-        SavingsAccount,
-        on_delete=models.CASCADE,
-        related_name='custom_interest_tiers'
-    )
-    
-    tier_name = models.CharField(
-        _("Tier Name"),
-        max_length=50,
-        help_text=_("Name of this custom interest tier")
-    )
-    
-    min_balance = MoneyField(
-        _("Minimum Balance"),
-        max_digits=15,
-        decimal_places=2,
-        default_currency='UGX'
-    )
-    
-    max_balance = MoneyField(
-        _("Maximum Balance"),
-        max_digits=15,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        default_currency='UGX',
-        help_text=_("Maximum balance for this tier (blank for no upper limit)")
-    )
-    
-    interest_rate = models.DecimalField(
-        _("Interest Rate (%)"),
-        max_digits=8,
-        decimal_places=5,
-        validators=[MinValueValidator(0), MaxValueValidator(100)]
-    )
-    
-    is_active = models.BooleanField(
-        _("Is Active"),
-        default=True
-    )
-    
-    # Effective period
-    start_date = models.DateField(
-        _("Start Date"),
-        default=timezone.now
-    )
-    
-    end_date = models.DateField(
-        _("End Date"),
-        null=True,
-        blank=True,
-        help_text=_("Leave blank for permanent tier")
-    )
-    
-    # Approval information
-    is_approved = models.BooleanField(
-        _("Is Approved"),
-        default=False
-    )
-    
-    approval_date = models.DateTimeField(
-        _("Approval Date"),
-        null=True,
-        blank=True
-    )
-    
-    reason = models.TextField(
-        _("Reason"),
-        null=True,
-        blank=True,
-        help_text=_("Reason for custom interest rate")
-    )
-    
-    financial_period = models.ForeignKey(
-        FinancialPeriod,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name='custom_interest_tiers'
-    )
-    
-    def __str__(self):
-        max_display = format_money(self.max_balance) if self.max_balance else "No limit"
-        return f"{self.tier_name}: {format_money(self.min_balance)} - {max_display} ({self.interest_rate}%)"
-    
-    class Meta:
-        verbose_name = _("Savings Interest Tier")
-        verbose_name_plural = _("Savings Interest Tiers")
-        ordering = ['min_balance']
-
+        indexes = [
+            models.Index(fields=['account', 'is_achieved']),
+            models.Index(fields=['target_date']),
+        ]

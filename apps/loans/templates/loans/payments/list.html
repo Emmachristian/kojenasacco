@@ -1,0 +1,21 @@
+"""
+<!-- In your product table -->
+<tbody>
+    {% for product in products %}
+    <tr id="product-row-{{ product.id }}">
+        <td>{{ product.name }}</td>
+        <td>{{ product.code }}</td>
+        <td>{{ product.formatted_min_amount }}</td>
+        <td>{{ product.formatted_max_amount }}</td>
+        <td>
+            <button class="btn btn-sm btn-danger"
+                    hx-get="{% url 'loans:product_delete_modal' product.id %}"
+                    hx-target="#modal-content"
+                    hx-swap="innerHTML">
+                <i class="bi bi-trash"></i>
+            </button>
+        </td>
+    </tr>
+    {% endfor %}
+</tbody>
+"""

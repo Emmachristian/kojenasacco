@@ -1,0 +1,165 @@
+<form id="periodForm"
+      hx-post="{% if period %}{% url 'core:period_modal' %}?id={{ period.id }}{% else %}{% url 'core:period_modal' %}{% if fiscal_year_id %}?fiscal_year_id={{ fiscal_year_id }}{% endif %}{% endif %}"
+      hx-swap="none"
+      hx-on::after-request="if(event.detail.successful) { bootstrap.Modal.getInstance(document.getElementById('periodModal')).hide(); location.reload(); }">
+    {% csrf_token %}
+    
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger">
+        {{ form.non_field_errors }}
+    </div>
+    {% endif %}
+    
+    <div class="row">
+        <div class="col-md-12 mb-3">
+            <label for="{{ form.fiscal_year.id_for_label }}" class="form-label">
+                {{ form.fiscal_year.label }} <span class="text-danger">*</span>
+            </label>
+            {{ form.fiscal_year }}
+            {% if form.fiscal_year.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ form.fiscal_year.errors|join:", " }}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8 mb-3">
+            <label for="{{ form.name.id_for_label }}" class="form-label">
+                {{ form.name.label }} <span class="text-danger">*</span>
+            </label>
+            {{ form.name }}
+            {% if form.name.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ form.name.errors|join:", " }}
+                </div>
+            {% endif %}
+            {% if form.name.help_text %}
+                <small class="form-text text-muted">
+                    <i class="fa fa-lightbulb text-warning me-1"></i>{{ form.name.help_text }}
+                </small>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <label for="{{ form.period_number.id_for_label }}" class="form-label">
+                {{ form.period_number.label }} <span class="text-danger">*</span>
+            </label>
+            {{ form.period_number }}
+            {% if form.period_number.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ form.period_number.errors|join:", " }}
+                </div>
+            {% endif %}
+            {% if form.period_number.help_text %}
+                <small class="form-text text-muted">
+                    <i class="fa fa-lightbulb text-warning me-1"></i>{{ form.period_number.help_text }}
+                </small>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="{{ form.start_date.id_for_label }}" class="form-label">
+                {{ form.start_date.label }} <span class="text-danger">*</span>
+            </label>
+            {{ form.start_date }}
+            {% if form.start_date.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ form.start_date.errors|join:", " }}
+                </div>
+            {% endif %}
+            {% if form.start_date.help_text %}
+                <small class="form-text text-muted">
+                    <i class="fa fa-lightbulb text-warning me-1"></i>{{ form.start_date.help_text }}
+                </small>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <label for="{{ form.end_date.id_for_label }}" class="form-label">
+                {{ form.end_date.label }} <span class="text-danger">*</span>
+            </label>
+            {{ form.end_date }}
+            {% if form.end_date.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ form.end_date.errors|join:", " }}
+                </div>
+            {% endif %}
+            {% if form.end_date.help_text %}
+                <small class="form-text text-muted">
+                    <i class="fa fa-lightbulb text-warning me-1"></i>{{ form.end_date.help_text }}
+                </small>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12 mb-3">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <div class="form-check form-switch">
+                        {{ form.is_active }}
+                        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                            <strong>{{ form.is_active.label }}</strong>
+                            <br>
+                            <small class="text-muted">
+                                Only one period can be active at a time.
+                            </small>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mb-3">
+        <label for="{{ form.description.id_for_label }}" class="form-label">
+            {{ form.description.label }}
+        </label>
+        {{ form.description }}
+        {% if form.description.errors %}
+            <div class="invalid-feedback d-block">
+                {{ form.description.errors|join:", " }}
+            </div>
+        {% endif %}
+    </div>
+    
+    {% if period %}
+    <div class="alert alert-info">
+        <h6 class="alert-heading">
+            <i class="fa fa-info-circle me-1"></i> Period Status
+        </h6>
+        <div class="row">
+            <div class="col-md-3">
+                <strong>Status:</strong> 
+                <span class="badge bg-{{ period.status|lower }}">
+                    {{ period.get_status_display }}
+                </span>
+            </div>
+            <div class="col-md-3">
+                <strong>Duration:</strong> 
+                {{ period.get_duration_days }} days
+            </div>
+            <div class="col-md-3">
+                <strong>Closed:</strong> 
+                {% if period.is_closed %}
+                    <i class="fa fa-check-circle text-success"></i> Yes
+                {% else %}
+                    <i class="fa fa-times-circle text-muted"></i> No
+                {% endif %}
+            </div>
+            <div class="col-md-3">
+                <strong>Locked:</strong> 
+                {% if period.is_locked %}
+                    <i class="fa fa-lock text-danger"></i> Yes
+                {% else %}
+                    <i class="fa fa-unlock text-muted"></i> No
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</form>

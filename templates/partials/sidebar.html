@@ -1,7 +1,17 @@
 {% load static %} 
 
 <div class="app-header__logo">
-    <div class="logo-src"></div>
+    <div class="logo-container" style="display: flex; align-items: center; gap: 10px;">
+        {% if sacco_logo %}
+            <!-- Sacco logo image -->
+            <div class="logo-src" style="background-image: url('{{ sacco_logo.url }}'); width: 40px; height: 40px; background-size: contain; background-repeat: no-repeat; background-position: center;"></div>
+        {% endif %}
+        
+        <!-- Sacco name in Pacifico font -->
+        <div class="logo-text" style="font-family: 'Pacifico', cursive; font-size: 1.6rem; color: #fff; white-space: nowrap;">
+            {{ sacco_short_name|default:"Kojena" }}
+        </div>
+    </div>
     <div class="header__pane ms-auto">
         <div>
             <button type="button" class="hamburger close-sidebar-btn hamburger--elastic" data-class="closed-sidebar">
@@ -33,9 +43,9 @@
 <div class="scrollbar-sidebar">
     <div class="app-sidebar__inner">
         <ul class="vertical-nav-menu" id="sidebar-menu">
+            
             <!-- Dashboard -->
-
-            <li class="app-sidebar__heading">MENU</li>
+            <li class="app-sidebar__heading">MAIN MENU</li>
 
             <li>
                 <a href="{% url 'core:home' %}">
@@ -44,67 +54,508 @@
                 </a>
             </li>
 
-            <!-- Students Management -->
+            <!-- Members Module -->
             <li>
                 <a href="#">
-                    <i class="metismenu-icon pe-7s-study"></i>
-                    Students
+                    <i class="metismenu-icon pe-7s-users"></i>
+                    Members
                     <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
                 </a>
                 <ul>
                     <li>
-                        <a href="">
-                            <i class="metismenu-icon"></i>
-                            Students Directory
+                        <a href="{% url 'members:dashboard' %}">
+                            <i class="metismenu-icon pe-7s-graph1"></i>
+                            Members Dashboard
                         </a>
                     </li>
                     <li>
-                        <a href="">
-                            <i class="metismenu-icon"></i>
-                            New Admission
+                        <a href="#">
+                            <i class="metismenu-icon pe-7s-user"></i>
+                            Member Management
+                            <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+                        </a>
+                        <ul>
+                            <li>
+                                <a href="{% url 'members:member_list' %}">
+                                    <i class="metismenu-icon"></i>
+                                    Member Directory
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'members:member_create' %}">
+                                    <i class="metismenu-icon"></i>
+                                    New Member Registration
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="metismenu-icon pe-7s-network"></i>
+                            Member Groups
+                            <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+                        </a>
+                        <ul>
+                            <li>
+                                <a href="{% url 'members:group_list' %}">
+                                    <i class="metismenu-icon"></i>
+                                    All Groups
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'members:group_create' %}">
+                                    <i class="metismenu-icon"></i>
+                                    Create New Group
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="{% url 'members:payment_method_list' %}">
+                            <i class="metismenu-icon pe-7s-credit"></i>
+                            Payment Methods
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'members:next_of_kin_list' %}">
+                            <i class="metismenu-icon pe-7s-id"></i>
+                            Next of Kin
                         </a>
                     </li>
                 </ul>
             </li>
 
-            <!-- Academic Management -->
+            <!-- Savings Module -->
             <li>
                 <a href="#">
-                    <i class="metismenu-icon pe-7s-study"></i>
-                    Academic Structure
+                    <i class="metismenu-icon pe-7s-wallet"></i>
+                    Savings
                     <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
                 </a>
                 <ul>
                     <li>
-                        <a href="">
-                            <i class="metismenu-icon"></i>
-                            Academic Levels
+                        <a href="{% url 'savings:dashboard' %}">
+                            <i class="metismenu-icon pe-7s-graph1"></i>
+                            Savings Dashboard
                         </a>
                     </li>
                     <li>
-                        <a href="">
-                            <i class="metismenu-icon"></i>
-                            Classes
+                        <a href="#">
+                            <i class="metismenu-icon pe-7s-box2"></i>
+                            Products
+                            <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+                        </a>
+                        <ul>
+                            <li>
+                                <a href="{% url 'savings:product_list' %}">
+                                    <i class="metismenu-icon"></i>
+                                    All Products
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'savings:product_create' %}">
+                                    <i class="metismenu-icon"></i>
+                                    Create Product
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="metismenu-icon pe-7s-portfolio"></i>
+                            Accounts
+                            <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+                        </a>
+                        <ul>
+                            <li>
+                                <a href="{% url 'savings:account_list' %}">
+                                    <i class="metismenu-icon"></i>
+                                    All Accounts
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'savings:account_create' %}">
+                                    <i class="metismenu-icon"></i>
+                                    Open Account
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'savings:account_quick_open' %}">
+                                    <i class="metismenu-icon"></i>
+                                    Quick Open Account
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="metismenu-icon pe-7s-repeat"></i>
+                            Transactions
+                            <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+                        </a>
+                        <ul>
+                            <li>
+                                <a href="{% url 'savings:transaction_list' %}">
+                                    <i class="metismenu-icon"></i>
+                                    All Transactions
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'savings:deposit' %}">
+                                    <i class="metismenu-icon"></i>
+                                    Deposit
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'savings:withdrawal' %}">
+                                    <i class="metismenu-icon"></i>
+                                    Withdrawal
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'savings:transfer' %}">
+                                    <i class="metismenu-icon"></i>
+                                    Transfer
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="metismenu-icon pe-7s-calculator"></i>
+                            Interest
+                            <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+                        </a>
+                        <ul>
+                            <li>
+                                <a href="{% url 'savings:bulk_interest_calculation' %}">
+                                    <i class="metismenu-icon"></i>
+                                    Calculate Interest
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'savings:bulk_interest_posting' %}">
+                                    <i class="metismenu-icon"></i>
+                                    Post Interest
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="metismenu-icon pe-7s-refresh-2"></i>
+                            Standing Orders
+                            <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+                        </a>
+                        <ul>
+                            <li>
+                                <a href="{% url 'savings:standing_order_list' %}">
+                                    <i class="metismenu-icon"></i>
+                                    All Standing Orders
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'savings:standing_order_create' %}">
+                                    <i class="metismenu-icon"></i>
+                                    Create Standing Order
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="metismenu-icon pe-7s-target"></i>
+                            Savings Goals
+                            <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+                        </a>
+                        <ul>
+                            <li>
+                                <a href="{% url 'savings:goal_list' %}">
+                                    <i class="metismenu-icon"></i>
+                                    All Goals
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'savings:goal_create' %}">
+                                    <i class="metismenu-icon"></i>
+                                    Create Goal
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="{% url 'savings:reports' %}">
+                            <i class="metismenu-icon pe-7s-note2"></i>
+                            Savings Reports
                         </a>
                     </li>
                 </ul>
             </li>
 
-            <!-- Divider -->
-            <li class="divider"></li>
+            <!-- Loans Module -->
+            <li>
+                <a href="#">
+                    <i class="metismenu-icon pe-7s-cash"></i>
+                    Loans
+                    <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+                </a>
+                <ul>
+                    <li>
+                        <a href="{% url 'loans:dashboard' %}">
+                            <i class="metismenu-icon pe-7s-graph1"></i>
+                            Loans Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="metismenu-icon pe-7s-box2"></i>
+                            Loan Products
+                            <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+                        </a>
+                        <ul>
+                            <li>
+                                <a href="{% url 'loans:product_list' %}">
+                                    <i class="metismenu-icon"></i>
+                                    All Products
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'loans:product_create' %}">
+                                    <i class="metismenu-icon"></i>
+                                    Create Product
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="metismenu-icon pe-7s-note"></i>
+                            Applications
+                            <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+                        </a>
+                        <ul>
+                            <li>
+                                <a href="{% url 'loans:application_list' %}">
+                                    <i class="metismenu-icon"></i>
+                                    All Applications
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'loans:application_create' %}">
+                                    <i class="metismenu-icon"></i>
+                                    New Application
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="{% url 'loans:loan_list' %}">
+                            <i class="metismenu-icon pe-7s-portfolio"></i>
+                            Active Loans
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="metismenu-icon pe-7s-credit"></i>
+                            Payments
+                            <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+                        </a>
+                        <ul>
+                            <li>
+                                <a href="{% url 'loans:payment_list' %}">
+                                    <i class="metismenu-icon"></i>
+                                    All Payments
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'loans:payment_create' %}">
+                                    <i class="metismenu-icon"></i>
+                                    Record Payment
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="{% url 'loans:guarantor_list' %}">
+                            <i class="metismenu-icon pe-7s-user"></i>
+                            Guarantors
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'loans:collateral_list' %}">
+                            <i class="metismenu-icon pe-7s-safe"></i>
+                            Collateral
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'loans:schedule_list' %}">
+                            <i class="metismenu-icon pe-7s-date"></i>
+                            Loan Schedules
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'loans:bulk_disburse' %}">
+                            <i class="metismenu-icon pe-7s-download"></i>
+                            Bulk Disbursement
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'loans:reports' %}">
+                            <i class="metismenu-icon pe-7s-note2"></i>
+                            Loan Reports
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Dividends Module -->
+            <li>
+                <a href="#">
+                    <i class="metismenu-icon pe-7s-gift"></i>
+                    Dividends
+                    <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+                </a>
+                <ul>
+                    <li>
+                        <a href="{% url 'dividends:dashboard' %}">
+                            <i class="metismenu-icon pe-7s-graph1"></i>
+                            Dividends Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="metismenu-icon pe-7s-date"></i>
+                            Dividend Periods
+                            <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+                        </a>
+                        <ul>
+                            <li>
+                                <a href="{% url 'dividends:period_list' %}">
+                                    <i class="metismenu-icon"></i>
+                                    All Periods
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'dividends:period_create' %}">
+                                    <i class="metismenu-icon"></i>
+                                    Create Period
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="metismenu-icon pe-7s-calculator"></i>
+                            Dividend Rates
+                            <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+                        </a>
+                        <ul>
+                            <li>
+                                <a href="{% url 'dividends:member_dividend_list' %}">
+                                    <i class="metismenu-icon"></i>
+                                    Member Dividends
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'dividends:bulk_calculation' %}">
+                                    <i class="metismenu-icon"></i>
+                                    Calculate Dividends
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="metismenu-icon pe-7s-server"></i>
+                            Disbursements
+                            <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+                        </a>
+                        <ul>
+                            <li>
+                                <a href="{% url 'dividends:disbursement_list' %}">
+                                    <i class="metismenu-icon"></i>
+                                    All Disbursements
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'dividends:disbursement_create' %}">
+                                    <i class="metismenu-icon"></i>
+                                    Create Disbursement
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'dividends:batch_disbursement' %}">
+                                    <i class="metismenu-icon"></i>
+                                    Batch Disbursement
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="{% url 'dividends:payment_list' %}">
+                            <i class="metismenu-icon pe-7s-cash"></i>
+                            Payments
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'dividends:preference_list' %}">
+                            <i class="metismenu-icon pe-7s-settings"></i>
+                            Member Preferences
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'dividends:reports' %}">
+                            <i class="metismenu-icon pe-7s-note2"></i>
+                            Dividend Reports
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Reports & Analytics -->
+            <li class="app-sidebar__heading">REPORTS & ANALYTICS</li>
+
+            <li>
+                <a href="#">
+                    <i class="metismenu-icon pe-7s-graph2"></i>
+                    General Reports
+                    <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+                </a>
+                <ul>
+                    <li>
+                        <a href="{% url 'members:export_members_excel' %}">
+                            <i class="metismenu-icon"></i>
+                            Member Reports (Excel)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'members:export_members_pdf' %}">
+                            <i class="metismenu-icon"></i>
+                            Member Reports (PDF)
+                        </a>
+                    </li>
+                </ul>
+            </li>
 
             <!-- System Administration -->
-            <li class="app-sidebar__heading">COMPONENTS</li>
+            <li class="app-sidebar__heading">SYSTEM</li>
 
             <li>
                 <a href="">
+                    <i class="metismenu-icon pe-7s-config"></i>
+                    Settings
+                </a>
+            </li>
+
+            <li>
+                <a href="{% url 'accounts:user_account_settings' %}">
                     <i class="metismenu-icon pe-7s-user"></i>
                     Account Settings
                 </a>
             </li>
 
             <li>
-                <a href="">
+                <a href="{% url 'accounts:logout' %}">
                     <i class="metismenu-icon pe-7s-power"></i>
                     Logout
                 </a>

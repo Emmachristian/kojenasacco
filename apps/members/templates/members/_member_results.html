@@ -1,0 +1,445 @@
+{# members/templates/members/_member_results.html #}
+
+{% load static %}
+{% load widget_tweaks %}
+
+<!-- Members Table -->
+<div class="table-responsive" style="overflow: visible;">  {# ✅ CHANGED: Added overflow: visible #}
+    <table class="table table-hover table-striped table-bordered">
+        <thead>
+            <tr>
+                <th width="50">#</th>
+                <th>Member</th>
+                <th>Member Number</th>
+                <th>Category</th>
+                <th>Plan</th>
+                <th>Status</th>
+                <th>Credit Score</th>
+                <th>KYC Status</th>
+                <th width="120">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="memberTableBody">
+            {% if members_page %}
+                {% for member in members_page %}
+                <tr>
+                    <!-- Row Number -->
+                    <td>{{ forloop.counter|add:members_page.start_index|add:"-1" }}</td>
+                    
+                    <!-- Member Info with Photo -->
+                    <td>
+                        <div class="d-flex align-items-center position-relative">
+                            {% if member.member_photo %}
+                                <div class="position-relative me-2">
+                                    <img src="{{ member.member_photo.url }}" 
+                                         class="profile-avatar" 
+                                         alt="{{ member.get_full_name }}"
+                                         style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                                    <span class="member-status-indicator {{ member.status|lower }}" 
+                                          title="Status: {{ member.get_status_display }}"></span>
+                                </div>
+                            {% else %}
+                                <div class="position-relative me-2">
+                                    <div class="avatar-placeholder" 
+                                         style="width: 40px; height: 40px; border-radius: 50%; background: #007bff; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                                        <div class="avatar-title">
+                                            {% if member.first_name and member.last_name %}
+                                                {{ member.first_name.0|upper }}{{ member.last_name.0|upper }}
+                                            {% else %}
+                                                {{ member.first_name.0|upper|default:"?" }}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <span class="member-status-indicator {{ member.status|lower }}" 
+                                          title="Status: {{ member.get_status_display }}"></span>
+                                </div>
+                            {% endif %}
+                            <div>
+                                <h6 class="mb-0">{{ member.get_full_name }}</h6>
+                                <small class="text-muted">{{ member.phone_primary|default:"" }}</small>
+                            </div>
+                        </div>
+                    </td>
+                    
+                    <!-- Member Number -->
+                    <td><strong>{{ member.member_number }}</strong></td>
+                    
+                    <!-- Category Badge -->
+                    <td>
+                        <span class="badge bg-primary category-badge">
+                            {{ member.get_member_category_display }}
+                        </span>
+                    </td>
+                    
+                    <!-- Membership Plan -->
+                    <td>{{ member.get_membership_plan_display }}</td>
+                    
+                    <!-- Status Badge -->
+                    <td>
+                        {% if member.status == 'ACTIVE' %}
+                            <span class="badge bg-success status-badge">{{ member.get_status_display }}</span>
+                        {% elif member.status == 'PENDING_APPROVAL' %}
+                            <span class="badge bg-warning status-badge">{{ member.get_status_display }}</span>
+                        {% elif member.status == 'SUSPENDED' %}
+                            <span class="badge bg-danger status-badge">{{ member.get_status_display }}</span>
+                        {% elif member.status == 'DORMANT' %}
+                            <span class="badge bg-secondary status-badge">{{ member.get_status_display }}</span>
+                        {% elif member.status == 'BLACKLISTED' %}
+                            <span class="badge bg-dark status-badge">{{ member.get_status_display }}</span>
+                        {% else %}
+                            <span class="badge bg-info status-badge">{{ member.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    
+                    <!-- Credit Score -->
+                    <td>
+                        <strong>{{ member.credit_score }}</strong>
+                        <small class="text-muted">/1000</small>
+                    </td>
+                    
+                    <!-- KYC Status -->
+                    <td>
+                        <span class="kyc-indicator kyc-{{ member.kyc_status|lower }}" 
+                              title="{{ member.get_kyc_status_display }}"
+                              style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px;
+                                     {% if member.kyc_status == 'VERIFIED' %}background-color: #28a745;
+                                     {% elif member.kyc_status == 'PENDING' %}background-color: #ffc107;
+                                     {% elif member.kyc_status == 'REJECTED' %}background-color: #dc3545;
+                                     {% elif member.kyc_status == 'EXPIRED' %}background-color: #6c757d;
+                                     {% else %}background-color: #17a2b8;{% endif %}">
+                        </span>
+                        {{ member.get_kyc_status_display|truncatewords:1 }}
+                    </td>
+                    
+                    <!-- Actions Dropdown -->
+                    <td>
+                        <div class="dropdown" style="position: static;">
+                            <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fa fa-ellipsis-v me-1"></i> Actions
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end">
+                                <!-- View Profile -->
+                                <a class="dropdown-item text-success" href="{% url 'members:member_profile' member.pk %}">
+                                    <i class="fa fa-eye me-2"></i> View Profile
+                                </a>
+                                
+                                <!-- Edit -->
+                                <a class="dropdown-item text-warning" href="{% url 'members:member_edit' member.pk %}">
+                                    <i class="fa fa-edit me-2"></i> Edit
+                                </a>
+                                
+                                <hr class="dropdown-divider">
+                                
+                                <!-- Status Actions -->
+                                <h6 class="dropdown-header">Status Actions</h6>
+                                
+                                {% if member.status != 'ACTIVE' %}
+                                    <a class="dropdown-item" 
+                                    href="{% url 'members:member_activate_modal' member.pk %}"
+                                    hx-get="{% url 'members:member_activate_modal' member.pk %}"
+                                    hx-target="#modal-content"
+                                    hx-swap="innerHTML">
+                                        <i class="fa fa-check-circle me-1"></i> Activate
+                                    </a>
+                                {% endif %}
+                                
+                                {% if member.status == 'ACTIVE' %}
+                                    <a class="dropdown-item" 
+                                    href="{% url 'members:member_suspend_modal' member.pk %}"
+                                    hx-get="{% url 'members:member_suspend_modal' member.pk %}"
+                                    hx-target="#modal-content"
+                                    hx-swap="innerHTML">
+                                        <i class="fa fa-ban me-1"></i> Suspend
+                                    </a>
+                                {% endif %}
+                                
+                                <hr class="dropdown-divider">
+                                
+                                <!-- Delete Action -->
+                                <a class="dropdown-item text-danger" 
+                                href="{% url 'members:member_delete_modal' member.pk %}"
+                                hx-get="{% url 'members:member_delete_modal' member.pk %}"
+                                hx-target="#modal-content"
+                                hx-swap="innerHTML">
+                                    <i class="fa fa-trash me-2"></i> Delete
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="9" class="text-center text-muted">
+                        <i class="pe-7s-search" style="font-size: 48px; opacity: 0.3;"></i>
+                        <p class="mt-2">No members found.</p>
+                    </td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if members_page.paginator.num_pages > 1 %}
+<div id="paginationContainer" class="mt-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <!-- Results Count -->
+        <div id="resultsCount" class="text-muted">
+            Showing {{ members_page.start_index }} - {{ members_page.end_index }} of {{ members_page.paginator.count }} members
+        </div>
+        
+        <!-- Pagination Navigation -->
+        <nav aria-label="Member pagination">
+            <ul class="pagination mb-0" id="paginationNav">
+                <!-- Previous Button -->
+                {% if members_page.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="#" 
+                           hx-get="{% url 'members:member_search' %}" 
+                           hx-target="#member-results"
+                           hx-include="#searchForm"
+                           hx-vals='{"page": "{{ members_page.previous_page_number }}"}'
+                           aria-label="Previous">
+                            <span aria-hidden="true">«</span>
+                            <span class="visually-hidden">Previous</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true" aria-label="Previous">
+                            <span aria-hidden="true">«</span>
+                            <span class="visually-hidden">Previous</span>
+                        </a>
+                    </li>
+                {% endif %}
+                
+                <!-- Page Numbers -->
+                {% for page_num in members_page.paginator.page_range %}
+                    {% if page_num == members_page.number %}
+                        <li class="page-item active" aria-current="page">
+                            <a class="page-link" href="#">{{ page_num }}</a>
+                        </li>
+                    {% elif page_num > members_page.number|add:"-3" and page_num < members_page.number|add:"3" %}
+                        <li class="page-item">
+                            <a class="page-link" href="#"
+                               hx-get="{% url 'members:member_search' %}"
+                               hx-target="#member-results"
+                               hx-include="#searchForm"
+                               hx-vals='{"page": "{{ page_num }}"}'>
+                                {{ page_num }}
+                            </a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                <!-- Next Button -->
+                {% if members_page.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="#"
+                           hx-get="{% url 'members:member_search' %}"
+                           hx-target="#member-results"
+                           hx-include="#searchForm"
+                           hx-vals='{"page": "{{ members_page.next_page_number }}"}'
+                           aria-label="Next">
+                            <span aria-hidden="true">»</span>
+                            <span class="visually-hidden">Next</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true" aria-label="Next">
+                            <span aria-hidden="true">»</span>
+                            <span class="visually-hidden">Next</span>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</div>
+{% endif %}
+
+<style>
+/* Member Status Indicator */
+.member-status-indicator {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.member-status-indicator.active {
+    background-color: #28a745;
+}
+
+.member-status-indicator.pending_approval {
+    background-color: #ffc107;
+}
+
+.member-status-indicator.suspended,
+.member-status-indicator.blacklisted {
+    background-color: #dc3545;
+}
+
+.member-status-indicator.dormant {
+    background-color: #6c757d;
+}
+
+/* ✅ ADDED: Fix for table responsive overflow with dropdowns */
+.table-responsive {
+    overflow-x: auto;
+    overflow-y: visible !important;  /* Allow dropdowns to overflow vertically */
+}
+
+/* ✅ ADDED: Ensure table cells don't clip dropdown menus */
+.table tbody td {
+    position: relative;
+    overflow: visible;
+}
+
+/* ✅ ADDED: Ensure dropdown menus have proper z-index */
+.dropdown-menu {
+    z-index: 1050 !important;
+}
+
+/* Stats Cards */
+.stats-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.stats-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    font-size: 28px;
+    color: white;
+}
+
+.stats-content {
+    flex: 1;
+}
+
+.stats-label {
+    font-size: 12px;
+    color: #6c757d;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+
+.stats-content h3 {
+    font-size: 28px;
+    font-weight: bold;
+    margin: 0;
+}
+
+/* Profile Avatar */
+.profile-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Badges */
+.category-badge {
+    font-size: 11px;
+    padding: 4px 8px;
+}
+
+.status-badge {
+    font-size: 11px;
+    padding: 4px 8px;
+}
+
+/* Table Improvements */
+.table thead th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* ✅ ADDED: Responsive handling for mobile devices */
+@media (max-width: 768px) {
+    .table-responsive {
+        overflow-x: scroll;
+        overflow-y: visible;
+    }
+    
+    /* Make dropdown menu full width on mobile */
+    .dropdown-menu {
+        min-width: 200px;
+        right: 0 !important;
+        left: auto !important;
+    }
+}
+</style>
+
+<!-- ✅ OUT OF BAND UPDATE FOR STATS (at the very end) -->
+<div class="row mb-2" id="stats-cards" hx-swap-oob="true">
+    <div class="col-xl-3 col-md-6">
+        <div class="stats-card">
+            <div class="stats-icon bg-primary">
+                <i class="pe-7s-users"></i>
+            </div>
+            <div class="stats-content">
+                <div class="stats-label">Total Members</div>
+                <h3>{{ stats.total|default:0 }}</h3>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stats-card">
+            <div class="stats-icon bg-success">
+                <i class="pe-7s-check"></i>
+            </div>
+            <div class="stats-content">
+                <div class="stats-label">Active Members</div>
+                <h3>{{ stats.active|default:0 }}</h3>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stats-card">
+            <div class="stats-icon bg-warning">
+                <i class="pe-7s-clock"></i>
+            </div>
+            <div class="stats-content">
+                <div class="stats-label">Pending Approval</div>
+                <h3>{{ stats.pending_approval|default:0 }}</h3>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stats-card">
+            <div class="stats-icon bg-info">
+                <i class="pe-7s-graph2"></i>
+            </div>
+            <div class="stats-content">
+                <div class="stats-label">Avg Credit Score</div>
+                <h3>{{ stats.avg_credit_score|default:0|floatformat:0 }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
